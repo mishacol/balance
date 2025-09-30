@@ -5,12 +5,14 @@ import { formatCurrency } from '../../utils/formatters';
 interface SummaryCardProps {
   title: string;
   amount: number;
+  currency?: string;
   type?: 'income' | 'expense' | 'balance';
   percentage?: number;
 }
 export const SummaryCard: React.FC<SummaryCardProps> = ({
   title,
   amount,
+  currency = 'USD',
   type = 'balance',
   percentage
 }) => {
@@ -29,7 +31,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
         <h3 className="text-gray-400 text-sm">{title}</h3>
         <div className="mt-2 flex-grow">
           <div className={`text-2xl font-mono font-medium ${getColor()}`}>
-            {formatCurrency(amount)}
+            {formatCurrency(amount, currency)}
           </div>
           {percentage !== undefined && <div className="mt-2 flex items-center text-xs">
               {percentage >= 0 ? <ArrowUpIcon size={16} className="text-income mr-1" /> : <ArrowDownIcon size={16} className="text-expense mr-1" />}

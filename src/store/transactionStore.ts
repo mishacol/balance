@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Transaction, FinancialSummary, CategoryTotal } from '../types';
+import { dataBackupService } from '../services/dataBackupService';
 
 interface TransactionStore {
   transactions: Transaction[];
@@ -13,6 +14,13 @@ interface TransactionStore {
   getFinancialSummary: () => FinancialSummary;
   getCategoryTotals: () => CategoryTotal[];
   searchTransactions: (query: string) => Transaction[];
+  // Backup and recovery methods
+  createBackup: () => void;
+  restoreFromBackup: (backupIndex: number) => void;
+  exportData: () => string;
+  importData: (jsonData: string) => void;
+  downloadBackup: () => void;
+  getBackupInfo: () => { count: number; latest: Date | null; totalSize: number };
 }
 
 export const useTransactionStore = create<TransactionStore>()(
@@ -25,27 +33,36 @@ export const useTransactionStore = create<TransactionStore>()(
           ...transaction,
           id: Date.now().toString(),
         };
-        set((state) => ({
-          transactions: [...state.transactions, newTransaction],
-        }));
+        set((state) => {
+          const newTransactions = [...state.transactions, newTransaction];
+          // Create backup after adding transaction
+          setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
+          return { transactions: newTransactions };
+        });
       },
 
       updateTransaction: (id, updatedTransaction) => {
-        set((state) => ({
-          transactions: state.transactions.map((transaction) =>
+        set((state) => {
+          const newTransactions = state.transactions.map((transaction) =>
             transaction.id === id
               ? { ...transaction, ...updatedTransaction }
               : transaction
-          ),
-        }));
+          );
+          // Create backup after updating transaction
+          setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
+          return { transactions: newTransactions };
+        });
       },
 
       deleteTransaction: (id) => {
-        set((state) => ({
-          transactions: state.transactions.filter(
+        set((state) => {
+          const newTransactions = state.transactions.filter(
             (transaction) => transaction.id !== id
-          ),
-        }));
+          );
+          // Create backup after deleting transaction
+          setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
+          return { transactions: newTransactions };
+        });
       },
 
       getTransactionsByType: (type) => {
@@ -124,6 +141,45 @@ export const useTransactionStore = create<TransactionStore>()(
             transaction.description.toLowerCase().includes(lowercaseQuery) ||
             transaction.category.toLowerCase().includes(lowercaseQuery)
         );
+      },
+
+      // Backup and recovery methods
+      createBackup: () => {
+        const transactions = get().transactions;
+        dataBackupService.createBackup(transactions);
+      },
+
+      restoreFromBackup: (backupIndex) => {
+        const restoredTransactions = dataBackupService.restoreFromBackup(backupIndex);
+        if (restoredTransactions.length > 0) {
+          set({ transactions: restoredTransactions });
+        }
+      },
+
+      exportData: () => {
+        const transactions = get().transactions;
+        return dataBackupService.exportData(transactions);
+      },
+
+      importData: (jsonData) => {
+        try {
+          const importedTransactions = dataBackupService.importData(jsonData);
+          set({ transactions: importedTransactions });
+          // Create backup after import
+          setTimeout(() => dataBackupService.createBackup(importedTransactions), 100);
+        } catch (error) {
+          console.error('Failed to import data:', error);
+          throw error;
+        }
+      },
+
+      downloadBackup: () => {
+        const transactions = get().transactions;
+        dataBackupService.downloadBackup(transactions);
+      },
+
+      getBackupInfo: () => {
+        return dataBackupService.getBackupInfo();
       },
     }),
     {

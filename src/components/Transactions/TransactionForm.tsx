@@ -151,7 +151,8 @@ export const TransactionForm: React.FC = () => {
           options: [
             { value: 'charitable-subscriptions', label: 'Charitable Subscriptions' },
             { value: 'donations', label: 'Donations' },
-            { value: 'gifts', label: 'Gifts' }
+            { value: 'gifts', label: 'Gifts' },
+            { value: 'charity', label: 'Charity' }
           ]
         },
         {
@@ -181,10 +182,13 @@ export const TransactionForm: React.FC = () => {
             { value: 'books-magazines', label: 'Books & Magazines' },
             { value: 'games-apps', label: 'Games & Apps' },
             { value: 'hobbies', label: 'Hobbies' },
-            { value: 'movies-concerts', label: 'Movies & Concerts' },
             { value: 'music-streaming', label: 'Music/Streaming' },
             { value: 'sports-recreation', label: 'Sports/Recreation' },
-            { value: 'vacation-travel', label: 'Vacation/Travel' }
+            { value: 'vacation-travel', label: 'Vacation/Travel' },
+            { value: 'movies', label: 'Movies' },
+            { value: 'concerts', label: 'Concerts' },
+            { value: 'theaters', label: 'Theaters' },
+            { value: 'night-clubs', label: 'Night Clubs' }
           ]
         },
         {
@@ -220,18 +224,22 @@ export const TransactionForm: React.FC = () => {
             { value: 'hospital-emergency', label: 'Hospital/Emergency' },
             { value: 'prescriptions', label: 'Prescriptions' },
             { value: 'therapy-counseling', label: 'Therapy/Counseling' },
-            { value: 'vision', label: 'Vision' }
+            { value: 'vision', label: 'Vision' },
+            { value: 'pharmacy', label: 'Pharmacy' }
           ]
         },
         {
           label: 'Housing',
           options: [
             { value: 'furniture-appliances', label: 'Furniture & Appliances' },
-            { value: 'hoa-fees', label: 'HOA Fees' },
             { value: 'home-insurance', label: 'Home Insurance' },
             { value: 'maintenance-repairs', label: 'Maintenance & Repairs' },
             { value: 'property-tax', label: 'Property Tax' },
-            { value: 'rent-mortgage', label: 'Rent/Mortgage' }
+            { value: 'rent-mortgage', label: 'Rent/Mortgage' },
+            { value: 'cleaning-products', label: 'Cleaning Products' },
+            { value: 'electronics', label: 'Electronics' },
+            { value: 'kitchen-utensils', label: 'Kitchen Utensils' },
+            { value: 'household-goods', label: 'Household Goods' }
           ]
         },
         {
@@ -289,7 +297,8 @@ export const TransactionForm: React.FC = () => {
           options: [
             { value: 'cable-streaming', label: 'Cable/Streaming' },
             { value: 'electricity', label: 'Electricity' },
-            { value: 'gas-heating', label: 'Gas/Heating' },
+            { value: 'gas', label: 'Gas' },
+            { value: 'heating', label: 'Heating' },
             { value: 'internet', label: 'Internet' },
             { value: 'phone', label: 'Phone' },
             { value: 'trash-recycling', label: 'Trash/Recycling' },
@@ -417,6 +426,9 @@ export const TransactionForm: React.FC = () => {
                 placeholder="Select a category"
                 isSearchable
                 isClearable
+                filterOption={(option, inputValue) => {
+                  return option.label.toLowerCase().includes(inputValue.toLowerCase());
+                }}
                 className="react-select-container"
                 classNamePrefix="react-select"
                 styles={{

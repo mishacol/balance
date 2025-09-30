@@ -63,6 +63,21 @@ export const DashboardPage: React.FC = () => {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 
+  // Get the most common currency from transactions
+  const getPrimaryCurrency = () => {
+    if (filteredTransactions.length === 0) return 'USD';
+    
+    const currencyCount: { [key: string]: number } = {};
+    filteredTransactions.forEach(transaction => {
+      currencyCount[transaction.currency] = (currencyCount[transaction.currency] || 0) + 1;
+    });
+    
+    return Object.entries(currencyCount)
+      .sort(([,a], [,b]) => b - a)[0]?.[0] || 'USD';
+  };
+
+  const primaryCurrency = getPrimaryCurrency();
+
   // Generate daily data for chart based on selected time range
   const generateDailyData = () => {
     const dailyData = [];
@@ -150,9 +165,9 @@ export const DashboardPage: React.FC = () => {
       </div>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <SummaryCard title="Total Income" amount={summary.totalIncome} type="income" />
-        <SummaryCard title="Total Expenses" amount={summary.totalExpenses} type="expense" />
-        <SummaryCard title="Balance" amount={summary.balance} type="balance" />
+        <SummaryCard title="Total Income" amount={summary.totalIncome} type="income" currency={primaryCurrency} />
+        <SummaryCard title="Total Expenses" amount={summary.totalExpenses} type="expense" currency={primaryCurrency} />
+        <SummaryCard title="Balance" amount={summary.balance} type="balance" currency={primaryCurrency} />
       </div>
       {/* Charts and Recent Transactions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

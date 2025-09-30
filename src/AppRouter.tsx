@@ -5,6 +5,8 @@ import { Layout } from './components/Layout';
 import { DashboardPage } from './components/Dashboard/DashboardPage';
 import { TransactionsPage } from './components/Transactions/TransactionsPage';
 import { TransactionForm } from './components/Transactions/TransactionForm';
+import { BackupPage } from './components/Backup/BackupPage';
+import { SettingsPage } from './components/Settings/SettingsPage';
 export function AppRouter() {
   return <BrowserRouter>
       <Routes>
@@ -20,6 +22,9 @@ export function AppRouter() {
         <Route path="/edit-transaction/:id" element={<Layout>
               <TransactionForm />
             </Layout>} />
+        <Route path="/backup" element={<Layout>
+              <BackupPage />
+            </Layout>} />
         <Route path="/analytics" element={<Layout>
               <div className="text-center py-12">
                 <h2 className="text-xl font-bold mb-4">
@@ -31,12 +36,7 @@ export function AppRouter() {
               </div>
             </Layout>} />
         <Route path="/settings" element={<Layout>
-              <div className="text-center py-12">
-                <h2 className="text-xl font-bold mb-4">Settings Coming Soon</h2>
-                <p className="text-gray-400">
-                  This feature is under development.
-                </p>
-              </div>
+              <SettingsPage />
             </Layout>} />
       </Routes>
     </BrowserRouter>;
