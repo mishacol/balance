@@ -1,0 +1,121 @@
+/* PLEASE NOTE: THESE TAILWIND IMPORTS SHOULD NEVER BE DELETED */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+/* DO NOT DELETE THESE TAILWIND IMPORTS, OTHERWISE THE STYLING WILL NOT RENDER AT ALL */
+
+/* Custom DatePicker Styles */
+.react-datepicker {
+  background-color: #121212 !important;
+  border: 1px solid #1f1f1f !important;
+  color: white !important;
+  font-family: inherit !important;
+}
+
+.react-datepicker__header {
+  background-color: #121212 !important;
+  border-bottom: 1px solid #1f1f1f !important;
+}
+
+.react-datepicker__current-month,
+.react-datepicker__day-name {
+  color: white !important;
+}
+
+.react-datepicker__day {
+  color: white !important;
+}
+
+.react-datepicker__day:hover {
+  background-color: rgba(0, 217, 255, 0.2) !important;
+}
+
+.react-datepicker__day--selected {
+  background-color: #00d9ff !important;
+  color: #0a0a0a !important;
+}
+
+.react-datepicker__day--keyboard-selected {
+  background-color: rgba(0, 217, 255, 0.3) !important;
+}
+
+.react-datepicker__month-dropdown,
+.react-datepicker__year-dropdown {
+  background-color: #121212 !important;
+  border: 1px solid #1f1f1f !important;
+  color: white !important;
+}
+
+.react-datepicker__month-option,
+.react-datepicker__year-option {
+  color: white !important;
+  background-color: #121212 !important;
+}
+
+.react-datepicker__month-option:hover,
+.react-datepicker__year-option:hover {
+  background-color: rgba(0, 217, 255, 0.2) !important;
+  color: white !important;
+}
+
+.react-datepicker__month-option--selected,
+.react-datepicker__year-option--selected {
+  background-color: #00d9ff !important;
+  color: #0a0a0a !important;
+}
+
+/* Fix for month/year dropdown selectors */
+.react-datepicker__month-select,
+.react-datepicker__year-select {
+  background-color: #121212 !important;
+  color: white !important;
+  border: 1px solid #1f1f1f !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  margin: 0 4px !important;
+}
+
+.react-datepicker__month-select option,
+.react-datepicker__year-select option {
+  background-color: #121212 !important;
+  color: white !important;
+}
+
+/* Navigation arrows */
+.react-datepicker__navigation {
+  color: white !important;
+}
+
+.react-datepicker__navigation:hover {
+  color: #00d9ff !important;
+}
+
+/* Category Dropdown Styling */
+select optgroup {
+  color: #00d9ff !important;
+  font-weight: 600 !important;
+  background-color: #1a1a1a !important;
+  padding: 6px 8px !important;
+  font-size: 0.875rem !important;
+}
+
+select option {
+  color: #d1d5db !important;
+  background-color: #121212 !important;
+  padding-left: 24px !important;
+  font-size: 0.875rem !important;
+  position: relative !important;
+}
+
+select option::before {
+  content: "• " !important;
+  color: #6b7280 !important;
+  margin-right: 6px !important;
+  position: absolute !important;
+  left: 8px !important;
+}
+
+/* Recharts tooltip cursor styling */
+.recharts-tooltip-cursor {
+  fill: rgba(55, 65, 81, 0.3) !important;
+}

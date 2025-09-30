@@ -1,0 +1,44 @@
+import React from 'react';
+import { Card } from '../ui/Card';
+import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
+import { formatCurrency } from '../../utils/formatters';
+interface SummaryCardProps {
+  title: string;
+  amount: number;
+  type?: 'income' | 'expense' | 'balance';
+  percentage?: number;
+}
+export const SummaryCard: React.FC<SummaryCardProps> = ({
+  title,
+  amount,
+  type = 'balance',
+  percentage
+}) => {
+  const getColor = () => {
+    switch (type) {
+      case 'income':
+        return 'text-income';
+      case 'expense':
+        return 'text-expense';
+      default:
+        return 'text-highlight';
+    }
+  };
+  return <Card className="h-full">
+      <div className="flex flex-col h-full">
+        <h3 className="text-gray-400 text-sm">{title}</h3>
+        <div className="mt-2 flex-grow">
+          <div className={`text-2xl font-mono font-medium ${getColor()}`}>
+            {formatCurrency(amount)}
+          </div>
+          {percentage !== undefined && <div className="mt-2 flex items-center text-xs">
+              {percentage >= 0 ? <ArrowUpIcon size={16} className="text-income mr-1" /> : <ArrowDownIcon size={16} className="text-expense mr-1" />}
+              <span className={percentage >= 0 ? 'text-income' : 'text-expense'}>
+                {Math.abs(percentage).toFixed(1)}%
+              </span>
+              <span className="text-gray-400 ml-1">vs last period</span>
+            </div>}
+        </div>
+      </div>
+    </Card>;
+};
