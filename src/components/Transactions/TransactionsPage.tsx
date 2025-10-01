@@ -292,7 +292,29 @@ export const TransactionsPage: React.FC = () => {
       { value: 'internet', label: 'Internet' },
       { value: 'phone', label: 'Phone' },
       { value: 'trash-recycling', label: 'Trash/Recycling' },
-      { value: 'water-sewer', label: 'Water & Sewer' }
+      { value: 'water-sewer', label: 'Water & Sewer' },
+      
+      // Investment subcategories
+      { value: 'savings-account', label: 'Savings Account' },
+      { value: 'term-deposits', label: 'Term Deposits' },
+      { value: 'high-yield-savings', label: 'High-Yield Savings' },
+      { value: 'money-market', label: 'Money Market' },
+      { value: 'bitcoin', label: 'Bitcoin' },
+      { value: 'ethereum', label: 'Ethereum' },
+      { value: 'altcoins', label: 'Altcoins' },
+      { value: 'crypto-staking', label: 'Crypto Staking' },
+      { value: 'individual-stocks', label: 'Individual Stocks' },
+      { value: 'mutual-funds', label: 'Mutual Funds' },
+      { value: 'etfs', label: 'ETFs' },
+      { value: 'government-bonds', label: 'Government Bonds' },
+      { value: 'corporate-bonds', label: 'Corporate Bonds' },
+      { value: 'real-estate-investment', label: 'Real Estate Investment' },
+      { value: 'reits', label: 'REITs' },
+      { value: 'property-investment', label: 'Property Investment' },
+      { value: 'precious-metals', label: 'Precious Metals' },
+      { value: 'commodities', label: 'Commodities' },
+      { value: 'trusts', label: 'Trusts' },
+      { value: 'other-investments', label: 'Other Investments' }
     ];
 
     // Create grouped options for react-select
@@ -413,6 +435,17 @@ export const TransactionsPage: React.FC = () => {
         return expenseSubs.includes(sub.value);
       });
       return createFlatOptions(expenseParentCategories, expenseSubs);
+    } else if (typeFilter === 'investment') {
+      const investmentSubs = allSubcategories.filter(sub => {
+        const investmentSubs = ['savings-account', 'term-deposits', 'high-yield-savings', 'money-market',
+          'bitcoin', 'ethereum', 'altcoins', 'crypto-staking',
+          'individual-stocks', 'mutual-funds', 'etfs', 'government-bonds', 'corporate-bonds',
+          'real-estate-investment', 'reits', 'property-investment',
+          'precious-metals', 'commodities', 'trusts', 'other-investments'];
+        return investmentSubs.includes(sub.value);
+      });
+      // Return flat list of investment categories (no parent grouping needed)
+      return investmentSubs;
     } else {
       // When "All Types" is selected, return empty array to make categories inactive
       return [];
@@ -534,6 +567,7 @@ export const TransactionsPage: React.FC = () => {
               <option value="">All Types</option>
               <option value="income">Income</option>
               <option value="expense">Expense</option>
+              <option value="investment">Investment</option>
             </select>
             <div className="w-48">
               <Select

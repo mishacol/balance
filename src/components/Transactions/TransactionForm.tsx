@@ -13,7 +13,7 @@ export const TransactionForm: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { transactions, addTransaction, updateTransaction } = useTransactionStore();
-  const [selectedType, setSelectedType] = useState<'income' | 'expense'>('income');
+  const [selectedType, setSelectedType] = useState<'income' | 'expense' | 'investment'>('income');
   
   // Check if we're editing an existing transaction
   const isEditing = Boolean(id);
@@ -130,6 +130,54 @@ export const TransactionForm: React.FC = () => {
             { value: 'reimbursements', label: 'Reimbursements' },
             { value: 'sold-items', label: 'Sold Items' },
             { value: 'other', label: 'Other' }
+          ]
+        }
+      ];
+    } else if (selectedType === 'investment') {
+      return [
+        {
+          label: 'Savings & Deposits',
+          options: [
+            { value: 'savings-account', label: 'Savings Account' },
+            { value: 'term-deposits', label: 'Term Deposits' },
+            { value: 'high-yield-savings', label: 'High-Yield Savings' },
+            { value: 'money-market', label: 'Money Market' }
+          ]
+        },
+        {
+          label: 'Cryptocurrency',
+          options: [
+            { value: 'bitcoin', label: 'Bitcoin' },
+            { value: 'ethereum', label: 'Ethereum' },
+            { value: 'altcoins', label: 'Altcoins' },
+            { value: 'crypto-staking', label: 'Crypto Staking' }
+          ]
+        },
+        {
+          label: 'Stocks & Bonds',
+          options: [
+            { value: 'individual-stocks', label: 'Individual Stocks' },
+            { value: 'mutual-funds', label: 'Mutual Funds' },
+            { value: 'etfs', label: 'ETFs' },
+            { value: 'government-bonds', label: 'Government Bonds' },
+            { value: 'corporate-bonds', label: 'Corporate Bonds' }
+          ]
+        },
+        {
+          label: 'Real Estate',
+          options: [
+            { value: 'real-estate-investment', label: 'Real Estate Investment' },
+            { value: 'reits', label: 'REITs' },
+            { value: 'property-investment', label: 'Property Investment' }
+          ]
+        },
+        {
+          label: 'Other Investments',
+          options: [
+            { value: 'precious-metals', label: 'Precious Metals' },
+            { value: 'commodities', label: 'Commodities' },
+            { value: 'trusts', label: 'Trusts' },
+            { value: 'other-investments', label: 'Other Investments' }
           ]
         }
       ];
@@ -341,6 +389,17 @@ export const TransactionForm: React.FC = () => {
                 onClick={() => handleTypeChange('expense')}
               >
                 Expense
+              </button>
+              <button 
+                type="button" 
+                className={`flex-1 py-2 font-medium ${
+                  selectedType === 'investment' 
+                    ? 'bg-highlight/10 text-highlight border border-highlight/30' 
+                    : 'bg-surface text-gray-400 border border-border-light'
+                }`}
+                onClick={() => handleTypeChange('investment')}
+              >
+                Investment
               </button>
             </div>
             {errors.type && <p className="text-expense text-xs mt-1">{errors.type.message}</p>}

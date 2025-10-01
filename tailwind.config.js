@@ -14,6 +14,7 @@ export default {
         expense: "#ff004d",
         highlight: "#00d9ff",
         warning: "#ffa600",
+        balance: "#ffa600",
       },
       fontFamily: {
         mono: ["SF Mono", "JetBrains Mono", "monospace"],

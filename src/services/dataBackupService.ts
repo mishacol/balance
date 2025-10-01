@@ -16,7 +16,6 @@ export interface ExportData {
 class DataBackupService {
   private readonly BACKUP_KEY = 'balance-backup';
   private readonly BACKUP_VERSION = '1.0.0';
-  private readonly MAX_BACKUPS = 10;
 
   // Create automatic backup
   createBackup(transactions: Transaction[]): void {
@@ -33,12 +32,7 @@ class DataBackupService {
       // Add new backup
       existingBackups.unshift(backup);
       
-      // Keep only the latest backups
-      if (existingBackups.length > this.MAX_BACKUPS) {
-        existingBackups.splice(this.MAX_BACKUPS);
-      }
-
-      // Save backups
+      // Save backups (no limit)
       localStorage.setItem(this.BACKUP_KEY, JSON.stringify(existingBackups));
       
       console.log(`✅ Backup created: ${transactions.length} transactions`);

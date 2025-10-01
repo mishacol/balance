@@ -246,6 +246,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               <th className="pb-2 font-normal w-32">Category</th>
               <th className="pb-2 font-normal">Description</th>
               <th className="pb-2 font-normal text-right w-24">Amount</th>
+              {!compact && <th className="pb-2 font-normal text-center w-20">Actions</th>}
             </tr>
           </thead>
         <tbody className="font-mono">
@@ -255,9 +256,13 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     <span className="bg-income/10 p-1 rounded">
                       <ArrowUpRightIcon size={16} className="text-income" />
                     </span>
-                  </div> : <div className="flex items-center">
+                  </div> : transaction.type === 'expense' ? <div className="flex items-center">
                     <span className="bg-expense/10 p-1 rounded">
                       <ArrowDownLeftIcon size={16} className="text-expense" />
+                    </span>
+                  </div> : <div className="flex items-center">
+                    <span className="bg-highlight/10 p-1 rounded">
+                      <ArrowUpRightIcon size={16} className="text-highlight" />
                     </span>
                   </div>}
               </td>
@@ -270,10 +275,47 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                 </span>
               </td>
               <td className="py-3 text-xs">{transaction.description}</td>
-              <td className={`py-3 text-right text-xs ${transaction.type === 'income' ? 'text-income' : 'text-expense'}`}>
-                {transaction.type === 'income' ? '+' : '-'}
+              <td className={`py-3 text-right text-xs ${transaction.type === 'income' ? 'text-income' : transaction.type === 'expense' ? 'text-expense' : 'text-highlight'}`}>
+                {transaction.type === 'income' ? '+' : transaction.type === 'expense' ? '-' : '→'}
                 {formatCurrency(transaction.amount, transaction.currency)}
               </td>
+              {!compact && <td className="py-3 text-center">
+                <div className="relative">
+                  <button
+                    onClick={() => toggleDropdown(transaction.id)}
+                    className="p-1 rounded hover:bg-highlight/20 transition-colors group"
+                    title="More actions"
+                  >
+                    <MoreVerticalIcon size={14} className="text-gray-400 group-hover:text-highlight" />
+                  </button>
+                  
+                  {openDropdown === transaction.id && (
+                    <div className="absolute right-0 top-8 bg-surface border border-border rounded-lg shadow-lg z-50 min-w-[120px]">
+                      <button
+                        onClick={() => handleEdit(transaction)}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-highlight/20 transition-colors flex items-center"
+                      >
+                        <EditIcon size={14} className="mr-2 text-gray-400" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDuplicate(transaction)}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-highlight/20 transition-colors flex items-center"
+                      >
+                        <CopyIcon size={14} className="mr-2 text-gray-400" />
+                        Duplicate
+                      </button>
+                      <button
+                        onClick={() => handleDelete(transaction.id)}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-expense/20 transition-colors flex items-center text-expense"
+                      >
+                        <TrashIcon size={14} className="mr-2" />
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </td>}
             </tr>)}
         </tbody>
       </table>
