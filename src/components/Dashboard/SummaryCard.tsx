@@ -6,7 +6,7 @@ interface SummaryCardProps {
   title: string;
   amount: number;
   currency?: string;
-  type?: 'income' | 'expense' | 'balance' | 'investment';
+  type?: 'income' | 'expense' | 'balance' | 'investment' | 'net-balance';
   percentage?: number;
   date?: string;
   isLoading?: boolean;
@@ -30,16 +30,18 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
         return 'text-highlight';
       case 'balance':
         return 'text-balance';
+      case 'net-balance':
+        return 'text-purple-400';
       default:
         return 'text-highlight';
     }
   };
   return <Card className="h-full">
       <div className="flex flex-col h-full">
-        <h3 className="text-gray-400 text-sm">{title}</h3>
+        <h3 className="text-gray-400 text-xs">{title}</h3>
         {date && <p className="text-gray-500 text-xs mt-1">{date}</p>}
         <div className="mt-2 flex-grow">
-          <div className={`text-2xl font-mono font-medium ${getColor()} ${isLoading ? 'opacity-50' : ''}`}>
+          <div className={`text-lg font-mono font-medium ${getColor()} ${isLoading ? 'opacity-50' : ''}`}>
             {isLoading ? (
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>

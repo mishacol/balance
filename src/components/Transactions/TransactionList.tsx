@@ -58,7 +58,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
       currency: transaction.currency,
       category: transaction.category,
       description: transaction.description,
-      date: transaction.date
+      date: transaction.date // Keep the original date!
     };
     addTransaction(duplicatedTransaction);
     setOpenDropdown(null);
@@ -241,35 +241,35 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         <table className="w-full text-left">
           <thead className="sticky top-0 bg-background z-10">
             <tr className="border-b border-border text-gray-400 text-xs">
-              <th className="pb-2 font-normal w-16">Type</th>
-              <th className="pb-2 font-normal w-24">Date</th>
-              <th className="pb-2 font-normal w-32">Category</th>
+              <th className="pb-2 font-normal w-20 text-center">Type</th>
+              <th className="pb-2 font-normal w-28">Date</th>
+              <th className="pb-2 font-normal w-40 text-center">Category</th>
               <th className="pb-2 font-normal">Description</th>
-              <th className="pb-2 font-normal text-right w-24">Amount</th>
+              <th className="pb-2 font-normal text-right w-28">Amount</th>
               {!compact && <th className="pb-2 font-normal text-center w-20">Actions</th>}
             </tr>
           </thead>
         <tbody className="font-mono">
           {paginatedTransactions.map(transaction => <tr key={transaction.id} className="border-b border-border hover:bg-border/30 transition-colors">
-              <td className="py-3">
-                {transaction.type === 'income' ? <div className="flex items-center">
+              <td className="py-3 text-center">
+                {transaction.type === 'income' ? <div className="flex items-center justify-center">
                     <span className="bg-income/10 p-1 rounded">
                       <ArrowUpRightIcon size={16} className="text-income" />
                     </span>
-                  </div> : transaction.type === 'expense' ? <div className="flex items-center">
+                  </div> : transaction.type === 'expense' ? <div className="flex items-center justify-center">
                     <span className="bg-expense/10 p-1 rounded">
                       <ArrowDownLeftIcon size={16} className="text-expense" />
                     </span>
-                  </div> : <div className="flex items-center">
+                  </div> : <div className="flex items-center justify-center">
                     <span className="bg-highlight/10 p-1 rounded">
                       <ArrowUpRightIcon size={16} className="text-highlight" />
                     </span>
                   </div>}
               </td>
-              <td className="py-3 text-xs">
+              <td className="py-3 text-xs px-2">
                 {compact ? formatShortDate(transaction.date) : formatDate(transaction.date)}
               </td>
-              <td className="py-3 text-xs">
+              <td className="py-3 text-xs text-center px-2">
                 <span className="bg-surface px-2 py-1 rounded text-xs">
                   {transaction.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </span>

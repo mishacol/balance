@@ -255,7 +255,8 @@ export const TransactionForm: React.FC = () => {
         {
           label: 'Food & Dining',
           options: [
-            { value: 'alcohol-beverages', label: 'Alcohol & Beverages' },
+            { value: 'alcohol', label: 'Alcohol' },
+            { value: 'beverages', label: 'Beverages' },
             { value: 'coffee-shops', label: 'Coffee Shops' },
             { value: 'delivery-takeout', label: 'Delivery & Takeout' },
             { value: 'fast-food', label: 'Fast Food' },
@@ -283,8 +284,10 @@ export const TransactionForm: React.FC = () => {
             { value: 'furniture-appliances', label: 'Furniture & Appliances' },
             { value: 'home-insurance', label: 'Home Insurance' },
             { value: 'maintenance-repairs', label: 'Maintenance & Repairs' },
+            { value: 'building-maintenance', label: 'Building Maintenance' },
             { value: 'property-tax', label: 'Property Tax' },
-            { value: 'rent-mortgage', label: 'Rent/Mortgage' },
+            { value: 'rent', label: 'Rent' },
+            { value: 'mortgage', label: 'Mortgage' },
             { value: 'cleaning-products', label: 'Cleaning Products' },
             { value: 'electronics', label: 'Electronics' },
             { value: 'kitchen-utensils', label: 'Kitchen Utensils' },
@@ -307,6 +310,7 @@ export const TransactionForm: React.FC = () => {
         {
           label: 'Personal Care',
           options: [
+            { value: 'personal-hygiene', label: 'Personal Hygiene' },
             { value: 'cosmetics-skincare', label: 'Cosmetics/Skincare' },
             { value: 'haircuts-salon', label: 'Haircuts/Salon' },
             { value: 'laundry-dry-cleaning', label: 'Laundry/Dry Cleaning' },

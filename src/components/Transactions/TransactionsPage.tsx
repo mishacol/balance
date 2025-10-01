@@ -4,13 +4,13 @@ import { Card } from '../ui/Card';
 import { TransactionList } from './TransactionList';
 import { Button } from '../ui/Button';
 import { useTransactionStore } from '../../store/transactionStore';
-import { FilterIcon, SearchIcon, DownloadIcon } from 'lucide-react';
+import { SearchIcon, DownloadIcon } from 'lucide-react';
 import Select from 'react-select';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 export const TransactionsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { transactions, searchTransactions } = useTransactionStore();
+  const { transactions } = useTransactionStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -60,27 +60,56 @@ export const TransactionsPage: React.FC = () => {
     const currentMonth = now.getMonth();
     
     return transactions.filter(transaction => {
+      // Date filtering
       const transactionDate = new Date(transaction.date);
       const transactionYear = transactionDate.getFullYear();
       const transactionMonth = transactionDate.getMonth();
       
+      let dateMatches = false;
       switch (selectedTimeRange) {
+        case 'all-time':
+          dateMatches = true;
+          break;
         case 'this-month':
-          return transactionYear === currentYear && transactionMonth === currentMonth;
+          dateMatches = transactionYear === currentYear && transactionMonth === currentMonth;
+          break;
         case 'last-month':
           const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
           const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-          return transactionYear === lastMonthYear && transactionMonth === lastMonth;
+          dateMatches = transactionYear === lastMonthYear && transactionMonth === lastMonth;
+          break;
         case 'this-year':
-          return transactionYear === currentYear;
+          dateMatches = transactionYear === currentYear;
+          break;
         case 'custom':
           if (customStartDate && customEndDate) {
-            return transactionDate >= customStartDate && transactionDate <= customEndDate;
+            // Normalize dates to only compare date parts (remove time components)
+            const transactionDateOnly = new Date(transactionDate.getFullYear(), transactionDate.getMonth(), transactionDate.getDate());
+            const startDateOnly = new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate());
+            const endDateOnly = new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate());
+            
+            dateMatches = transactionDateOnly >= startDateOnly && transactionDateOnly <= endDateOnly;
+          } else {
+            dateMatches = true;
           }
-          return true;
+          break;
         default:
-          return true;
+          dateMatches = true;
       }
+      
+      if (!dateMatches) return false;
+      
+      // Type filtering
+      if (typeFilter && typeFilter !== 'all' && transaction.type !== typeFilter) {
+        return false;
+      }
+      
+      // Category filtering
+      if (categoryFilter && transaction.category !== categoryFilter) {
+        return false;
+      }
+      
+      return true;
     });
   };
 
@@ -112,9 +141,9 @@ export const TransactionsPage: React.FC = () => {
           'education': ['books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition'],
           'entertainment': ['books-magazines', 'games-apps', 'hobbies', 'music-streaming', 'sports-recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs'],
           'financial-obligations': ['bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes'],
-          'food-dining': ['alcohol-beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
+          'food-dining': ['alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
           'healthcare': ['dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy'],
-          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent-mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
+          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'building-maintenance', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
           'miscellaneous': ['cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping'],
           'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'shoes', 'spa-massage', 'clothing', 'personal-hygiene'],
           'pets': ['grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary'],
@@ -233,7 +262,8 @@ export const TransactionsPage: React.FC = () => {
       { value: 'personal-loans', label: 'Personal Loans' },
       { value: 'savings', label: 'Savings' },
       { value: 'taxes', label: 'Taxes' },
-      { value: 'alcohol-beverages', label: 'Alcohol & Beverages' },
+      { value: 'alcohol', label: 'Alcohol' },
+      { value: 'beverages', label: 'Beverages' },
       { value: 'coffee-shops', label: 'Coffee Shops' },
       { value: 'delivery-takeout', label: 'Delivery & Takeout' },
       { value: 'fast-food', label: 'Fast Food' },
@@ -251,8 +281,10 @@ export const TransactionsPage: React.FC = () => {
       { value: 'furniture-appliances', label: 'Furniture & Appliances' },
       { value: 'home-insurance', label: 'Home Insurance' },
       { value: 'maintenance-repairs', label: 'Maintenance & Repairs' },
+      { value: 'building-maintenance', label: 'Building Maintenance' },
       { value: 'property-tax', label: 'Property Tax' },
-      { value: 'rent-mortgage', label: 'Rent/Mortgage' },
+      { value: 'rent', label: 'Rent' },
+      { value: 'mortgage', label: 'Mortgage' },
       { value: 'cleaning-products', label: 'Cleaning Products' },
       { value: 'electronics', label: 'Electronics' },
       { value: 'kitchen-utensils', label: 'Kitchen Utensils' },
@@ -342,9 +374,9 @@ export const TransactionsPage: React.FC = () => {
           'education': ['books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition'],
           'entertainment': ['books-magazines', 'games-apps', 'hobbies', 'music-streaming', 'sports-recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs'],
           'financial-obligations': ['bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes'],
-          'food-dining': ['alcohol-beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
+          'food-dining': ['alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
           'healthcare': ['dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy'],
-          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent-mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
+          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'building-maintenance', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
           'miscellaneous': ['cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping'],
           'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'shoes', 'spa-massage', 'clothing', 'personal-hygiene'],
           'pets': ['grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary'],
@@ -387,9 +419,9 @@ export const TransactionsPage: React.FC = () => {
           'education': ['books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition'],
           'entertainment': ['books-magazines', 'games-apps', 'hobbies', 'music-streaming', 'sports-recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs'],
           'financial-obligations': ['bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes'],
-          'food-dining': ['alcohol-beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
+          'food-dining': ['alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
           'healthcare': ['dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy'],
-          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent-mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
+          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'building-maintenance', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
           'miscellaneous': ['cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping'],
           'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'shoes', 'spa-massage', 'clothing', 'personal-hygiene'],
           'pets': ['grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary'],
@@ -425,9 +457,9 @@ export const TransactionsPage: React.FC = () => {
           'charitable-subscriptions', 'donations', 'gifts', 'charity', 'babysitting', 'child-support', 'daycare', 'kids-activities', 'school-supplies', 'toys-games',
           'books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition', 'books-magazines', 'games-apps', 'hobbies', 'music-streaming', 'sports-recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs',
           'bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes',
-          'alcohol-beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants',
+          'alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants',
           'dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy',
-          'furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent-mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods',
+          'furniture-appliances', 'home-insurance', 'maintenance-repairs', 'building-maintenance', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods',
           'cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping',
           'cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'shoes', 'spa-massage', 'clothing', 'personal-hygiene',
           'grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary',
@@ -545,32 +577,39 @@ export const TransactionsPage: React.FC = () => {
         </div>
       </div>
       <Card className="mb-8">
-        <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
-          <div className="flex items-center bg-background border border-border rounded-md px-3 py-2 w-full md:w-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          {/* Search Field - Takes full width on mobile, 4 columns on desktop */}
+          <div className="lg:col-span-4">
+            <div className="flex items-center bg-background border border-border rounded-md px-3 py-2 w-full">
             <SearchIcon size={18} className="text-gray-400 mr-2" />
-            <input 
-              type="text" 
-              placeholder="Search transactions..." 
-              className="bg-transparent border-none focus:outline-none text-white w-full" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+              <input 
+                type="text" 
+                placeholder="Search transactions..." 
+                className="bg-transparent border-none focus:outline-none text-white w-full" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <select 
-              className="bg-surface border border-border text-white rounded px-3 py-2 text-sm"
-              value={typeFilter}
-              onChange={(e) => {
-                setTypeFilter(e.target.value);
-                setCategoryFilter(''); // Clear category when type changes
-              }}
-            >
+          
+          {/* Filter Controls - Takes remaining space */}
+          <div className="lg:col-span-8">
+            <div className="flex gap-3">
+                <select 
+                  className="bg-surface border border-border text-white rounded px-3 py-2 text-sm min-w-[120px]"
+                  value={typeFilter}
+                  onChange={(e) => {
+                    setTypeFilter(e.target.value);
+                    setCategoryFilter(''); // Clear category when type changes
+                  }}
+                >
               <option value="">All Types</option>
               <option value="income">Income</option>
               <option value="expense">Expense</option>
               <option value="investment">Investment</option>
             </select>
-            <div className="w-48">
+                
+                <div className="w-48">
               <Select
                 value={categoryFilter ? getCategoryOptions().find(opt => opt.value === categoryFilter) || null : null}
                 onChange={(selectedOption) => {
@@ -678,50 +717,75 @@ export const TransactionsPage: React.FC = () => {
                      })}
               />
             </div>
-            <select 
-              className="bg-surface border border-border text-white rounded px-3 py-2 text-sm"
-              value={selectedTimeRange}
-              onChange={(e) => setSelectedTimeRange(e.target.value)}
-            >
+                
+                <select 
+                  className="bg-surface border border-border text-white rounded px-3 py-2 text-sm min-w-[140px]"
+                  value={selectedTimeRange}
+                  onChange={(e) => setSelectedTimeRange(e.target.value)}
+                >
+              <option value="all-time">All Time</option>
               <option value="this-month">This Month</option>
               <option value="last-month">Last Month</option>
               <option value="this-year">This Year</option>
               <option value="custom">Custom Range</option>
             </select>
-            {selectedTimeRange === 'custom' && (
-              <div className="flex items-center space-x-2">
-                <DatePicker
-                  selected={customStartDate}
-                  onChange={(date) => setCustomStartDate(date)}
-                  selectsStart
-                  startDate={customStartDate}
-                  endDate={customEndDate}
-                  placeholderText="Start Date"
-                  className="bg-surface border border-border text-white rounded px-3 py-2 text-sm"
-                  wrapperClassName="w-auto"
-                  calendarClassName="bg-surface border border-border text-white"
-                />
-                <span className="text-gray-400">to</span>
-                <DatePicker
-                  selected={customEndDate}
-                  onChange={(date) => setCustomEndDate(date)}
-                  selectsEnd
-                  startDate={customStartDate}
-                  endDate={customEndDate}
-                  minDate={customStartDate || undefined}
-                  placeholderText="End Date"
-                  className="bg-surface border border-border text-white rounded px-3 py-2 text-sm"
-                  wrapperClassName="w-auto"
-                  calendarClassName="bg-surface border border-border text-white"
-                />
-              </div>
-            )}
-            <Button variant="secondary" size="sm" className="flex items-center">
-              <FilterIcon size={16} className="mr-1" />
-              More Filters
-            </Button>
+            </div>
           </div>
         </div>
+        
+        {/* Custom Date Range - Separate row when needed */}
+        {selectedTimeRange === 'custom' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+            <div className="lg:col-span-4"></div> {/* Empty space to align with search */}
+            <div className="lg:col-span-8">
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-400 mb-1">Start Date</label>
+                  <DatePicker
+                    selected={customStartDate}
+                    onChange={(date) => setCustomStartDate(date)}
+                    selectsStart
+                    startDate={customStartDate}
+                    endDate={customEndDate}
+                    dateFormat="yyyy-MM-dd"
+                    showYearDropdown
+                    showMonthDropdown
+                    dropdownMode="select"
+                    yearDropdownItemNumber={15}
+                    scrollableYearDropdown
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-highlight"
+                    wrapperClassName="w-auto"
+                    calendarClassName="bg-surface border border-border text-white"
+                    placeholderText="Start Date"
+                  />
+                </div>
+                <span className="text-gray-400 text-sm mt-6">to</span>
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-400 mb-1">End Date</label>
+                  <DatePicker
+                    selected={customEndDate}
+                    onChange={(date) => setCustomEndDate(date)}
+                    selectsEnd
+                    startDate={customStartDate}
+                    endDate={customEndDate}
+                    minDate={customStartDate || undefined}
+                    dateFormat="yyyy-MM-dd"
+                    showYearDropdown
+                    showMonthDropdown
+                    dropdownMode="select"
+                    yearDropdownItemNumber={15}
+                    scrollableYearDropdown
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-highlight"
+                    wrapperClassName="w-auto"
+                    calendarClassName="bg-surface border border-border text-white"
+                    placeholderText="End Date"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <TransactionList 
           transactions={filteredTransactions} 
           typeFilter={typeFilter}

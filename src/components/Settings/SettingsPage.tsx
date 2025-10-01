@@ -4,7 +4,7 @@ import { SettingsIcon, DollarSignIcon, ShieldIcon } from 'lucide-react';
 import { useTransactionStore } from '../../store/transactionStore';
 
 export const SettingsPage: React.FC = () => {
-  const { backupMode, setBackupMode, baseCurrency, setBaseCurrency } = useTransactionStore();
+  const { backupMode, setBackupMode, baseCurrency, setBaseCurrency, monthlyIncomeTarget, setMonthlyIncomeTarget } = useTransactionStore();
 
   const currencies = [
     { code: 'AOA', name: 'Angolan Kwanza', symbol: 'Kz' },
@@ -110,6 +110,10 @@ export const SettingsPage: React.FC = () => {
     setBackupMode(event.target.value as 'manual' | 'automatic');
   };
 
+  const handleMonthlyTargetChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setMonthlyIncomeTarget(parseFloat(event.target.value) || 0);
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -178,6 +182,36 @@ export const SettingsPage: React.FC = () => {
                   <option value="manual">Manual</option>
                   <option value="automatic">Automatic (Every 15 minutes)</option>
                 </select>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Monthly Income Target */}
+        <Card title="Income Goals" className="mb-6">
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <DollarSignIcon size={20} className="text-income" />
+              <div className="flex-1">
+                <label htmlFor="monthly-target" className="block text-sm font-medium text-gray-300 mb-2">
+                  Monthly Income Target
+                </label>
+                <p className="text-xs text-gray-400 mb-3">
+                  Set your monthly income goal to track your progress and get motivational feedback.
+                </p>
+                <div className="flex items-center space-x-2">
+                  <input
+                    id="monthly-target"
+                    type="number"
+                    value={monthlyIncomeTarget}
+                    onChange={handleMonthlyTargetChange}
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                    className="bg-surface border border-border text-white rounded px-3 py-2 text-sm w-32"
+                  />
+                  <span className="text-sm text-gray-400">{baseCurrency}</span>
+                </div>
               </div>
             </div>
           </div>

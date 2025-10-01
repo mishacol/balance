@@ -3,12 +3,13 @@ import { SummaryCard } from './SummaryCard';
 import { Card } from '../ui/Card';
 import { TransactionList } from '../Transactions/TransactionList';
 import { ExpenseChart } from '../Charts/ExpenseChart';
+import { EmojiReaction } from '../ui/EmojiReaction';
 import { useTransactionStore } from '../../store/transactionStore';
 import { currencyService } from '../../services/currencyService';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 export const DashboardPage: React.FC = () => {
-  const { transactions, getFinancialSummary, baseCurrency } = useTransactionStore();
+  const { transactions, getFinancialSummary, baseCurrency, monthlyIncomeTarget } = useTransactionStore();
   
   // Debug: Log all transactions to see what we have
   console.log(`🔍 [DEBUG] Total transactions in store: ${transactions.length}`);
@@ -22,7 +23,7 @@ export const DashboardPage: React.FC = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('this-month');
   const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
   const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
-  const [summary, setSummary] = useState({ totalIncome: 0, totalExpenses: 0, totalInvestments: 0, balance: 0 });
+  const [summary, setSummary] = useState({ totalIncome: 0, totalExpenses: 0, totalInvestments: 0, balance: 0, netBalance: 0 });
   const [isConvertingCurrency, setIsConvertingCurrency] = useState(false);
   
   // Filter transactions based on selected time range - memoized to prevent infinite loops
@@ -120,9 +121,9 @@ export const DashboardPage: React.FC = () => {
       .filter(t => t.type === 'investment')
       .reduce((sum, t) => sum + t.amount, 0);
     
-    console.log(`📊 [DASHBOARD] Final summary - Income: ${totalIncome}, Expenses: ${totalExpenses}, Investments: ${totalInvestments}, Balance: ${balance}`);
+    console.log(`📊 [DASHBOARD] Final summary - Income: ${totalIncome}, Expenses: ${totalExpenses}, Investments: ${totalInvestments}, Available Balance: ${balance}, Net Balance: ${balance + totalInvestments}`);
 
-    return { totalIncome, totalExpenses, totalInvestments, balance };
+    return { totalIncome, totalExpenses, totalInvestments, balance, netBalance: balance + totalInvestments };
   }, [filteredTransactions, cumulativeTransactions, selectedTimeRange, customEndDate, baseCurrency]);
   
   // Update summary when transactions or base currency changes - WITH ASYNC CURRENCY CONVERSION
@@ -203,7 +204,8 @@ export const DashboardPage: React.FC = () => {
           totalIncome: convertedIncome,
           totalExpenses: convertedExpenses,
           totalInvestments: convertedInvestments, // Use converted cumulative investments
-          balance: convertedBalance
+          balance: convertedBalance,
+          netBalance: convertedBalance + convertedInvestments
         };
         
         console.log(`✅ [DASHBOARD] Final converted summary:`, convertedSummary);
@@ -356,13 +358,60 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <SummaryCard title="Income" amount={summary.totalIncome} type="income" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
         <SummaryCard title="Expenses" amount={summary.totalExpenses} type="expense" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
         <SummaryCard title="Investments" amount={summary.totalInvestments} type="investment" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
-        <SummaryCard title="Balance" amount={summary.balance} type="balance" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
+        <SummaryCard title="Available Balance" amount={summary.balance} type="balance" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
+        <SummaryCard title="Net Balance" amount={summary.netBalance} type="net-balance" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
       </div>
-      {/* Charts and Recent Transactions */}
+
+      {/* Monthly Income Target Card */}
+      {monthlyIncomeTarget > 0 && (
+        <div className="mb-8">
+          <Card title="Monthly Income Target" className="max-w-md mx-auto">
+            <div className="text-center">
+              <div className="mb-4">
+                <EmojiReaction 
+                  type={
+                    summary.totalIncome > monthlyIncomeTarget ? 'happy' :
+                    summary.totalIncome === monthlyIncomeTarget ? 'neutral' : 'sad'
+                  } 
+                  size={48} 
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="text-2xl font-bold text-white">
+                  {summary.totalIncome.toLocaleString()} / {monthlyIncomeTarget.toLocaleString()} {baseCurrency}
+                </div>
+                <div className="text-sm text-gray-400">
+                  {summary.totalIncome > monthlyIncomeTarget ? (
+                    <span className="text-income">🎉 Exceeded target by {(summary.totalIncome - monthlyIncomeTarget).toLocaleString()} {baseCurrency}!</span>
+                  ) : summary.totalIncome === monthlyIncomeTarget ? (
+                    <span className="text-gray-300">🎯 Target achieved!</span>
+                  ) : (
+                    <span className="text-expense">📈 {(monthlyIncomeTarget - summary.totalIncome).toLocaleString()} {baseCurrency} to go</span>
+                  )}
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-2 mt-4">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      summary.totalIncome > monthlyIncomeTarget ? 'bg-income' :
+                      summary.totalIncome === monthlyIncomeTarget ? 'bg-highlight' : 'bg-expense'
+                    }`}
+                    style={{ 
+                      width: `${Math.min((summary.totalIncome / monthlyIncomeTarget) * 100, 100)}%` 
+                    }}
+                  ></div>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {Math.round((summary.totalIncome / monthlyIncomeTarget) * 100)}% of target
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Card title="Monthly Overview" className="min-h-[400px]">
           <ExpenseChart data={chartData} />

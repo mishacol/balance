@@ -2,14 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Transaction, FinancialSummary, CategoryTotal } from '../types';
 import { dataBackupService } from '../services/dataBackupService';
-import { v4 as uuidv4 } from 'uuid';
 
 interface TransactionStore {
   transactions: Transaction[];
   backupMode: 'manual' | 'automatic';
   baseCurrency: string;
+  monthlyIncomeTarget: number;
   setBackupMode: (mode: 'manual' | 'automatic') => void;
   setBaseCurrency: (currency: string) => void;
+  setMonthlyIncomeTarget: (target: number) => void;
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
@@ -34,6 +35,7 @@ export const useTransactionStore = create<TransactionStore>()(
       transactions: [],
       backupMode: 'manual',
       baseCurrency: 'EUR',
+      monthlyIncomeTarget: 0,
 
       addTransaction: (transaction) => {
         const newTransaction: Transaction = {
@@ -162,6 +164,10 @@ export const useTransactionStore = create<TransactionStore>()(
 
       setBaseCurrency: (currency) => {
         set({ baseCurrency: currency });
+      },
+
+      setMonthlyIncomeTarget: (target) => {
+        set({ monthlyIncomeTarget: target });
       },
 
       // Backup and recovery methods
