@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Transaction, FinancialSummary, CategoryTotal } from '../types';
 import { dataBackupService } from '../services/dataBackupService';
+import { v4 as uuidv4 } from 'uuid';
 
 interface TransactionStore {
   transactions: Transaction[];
@@ -177,9 +178,31 @@ export const useTransactionStore = create<TransactionStore>()(
       importData: (jsonData) => {
         try {
           const importedTransactions = dataBackupService.importData(jsonData);
-          set({ transactions: importedTransactions });
+          const currentTransactions = get().transactions;
+          
+          console.log(`📊 Before import: ${currentTransactions.length} transactions`);
+          console.log(`📥 Importing: ${importedTransactions.length} transactions`);
+          
+          // Filter out duplicates based on ID to prevent conflicts
+          const existingIds = new Set(currentTransactions.map(t => t.id));
+          const newTransactions = importedTransactions.filter(t => !existingIds.has(t.id));
+          
+          console.log(`🆕 New transactions (after deduplication): ${newTransactions.length}`);
+          
+          const mergedTransactions = [...currentTransactions, ...newTransactions];
+          console.log(`📊 After merge: ${mergedTransactions.length} transactions`);
+          
+          // Force update the store
+          set({ transactions: mergedTransactions });
+          
+          // Verify the update worked
+          setTimeout(() => {
+            const verifyTransactions = get().transactions;
+            console.log(`✅ Verification: ${verifyTransactions.length} transactions in store`);
+          }, 100);
+          
           // Create backup after import
-          setTimeout(() => dataBackupService.createBackup(importedTransactions), 100);
+          setTimeout(() => dataBackupService.createBackup(mergedTransactions), 200);
         } catch (error) {
           console.error('Failed to import data:', error);
           throw error;

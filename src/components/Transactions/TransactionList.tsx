@@ -26,6 +26,19 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   const { deleteTransaction, addTransaction } = useTransactionStore();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [averageType, setAverageType] = useState<'per-transaction' | 'per-day'>('per-transaction');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+
+  // Pagination logic - only for non-compact mode
+  const totalPages = compact ? 1 : Math.ceil(transactions.length / itemsPerPage);
+  const startIndex = compact ? 0 : (currentPage - 1) * itemsPerPage;
+  const endIndex = compact ? transactions.length : startIndex + itemsPerPage;
+  const paginatedTransactions = compact ? transactions : transactions.slice(startIndex, endIndex);
+
+  // Reset to first page when transactions change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [transactions.length]);
 
   const handleEdit = (transaction: Transaction) => {
     navigate(`/edit-transaction/${transaction.id}`);
@@ -224,19 +237,19 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           </div>
         );
       })()}
-      <table className="w-full text-left">
-        <thead>
-          <tr className="border-b border-border text-gray-400 text-xs">
-            <th className="pb-2 font-normal">Type</th>
-            <th className="pb-2 font-normal">Date</th>
-            {!compact && <th className="pb-2 font-normal">Category</th>}
-            <th className="pb-2 font-normal">Description</th>
-            <th className="pb-2 font-normal text-right">Amount</th>
-            {!compact && <th className="pb-2 font-normal text-center">Actions</th>}
-          </tr>
-        </thead>
+      <div className={compact ? "overflow-y-auto max-h-72 scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500" : ""}>
+        <table className="w-full text-left">
+          <thead className="sticky top-0 bg-background z-10">
+            <tr className="border-b border-border text-gray-400 text-xs">
+              <th className="pb-2 font-normal w-16">Type</th>
+              <th className="pb-2 font-normal w-24">Date</th>
+              <th className="pb-2 font-normal w-32">Category</th>
+              <th className="pb-2 font-normal">Description</th>
+              <th className="pb-2 font-normal text-right w-24">Amount</th>
+            </tr>
+          </thead>
         <tbody className="font-mono">
-          {transactions.map(transaction => <tr key={transaction.id} className="border-b border-border hover:bg-border/30 transition-colors">
+          {paginatedTransactions.map(transaction => <tr key={transaction.id} className="border-b border-border hover:bg-border/30 transition-colors">
               <td className="py-3">
                 {transaction.type === 'income' ? <div className="flex items-center">
                     <span className="bg-income/10 p-1 rounded">
@@ -251,55 +264,74 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               <td className="py-3 text-xs">
                 {compact ? formatShortDate(transaction.date) : formatDate(transaction.date)}
               </td>
-              {!compact && <td className="py-3 text-xs">
+              <td className="py-3 text-xs">
                 <span className="bg-surface px-2 py-1 rounded text-xs">
                   {transaction.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </span>
-              </td>}
+              </td>
               <td className="py-3 text-xs">{transaction.description}</td>
               <td className={`py-3 text-right text-xs ${transaction.type === 'income' ? 'text-income' : 'text-expense'}`}>
                 {transaction.type === 'income' ? '+' : '-'}
                 {formatCurrency(transaction.amount, transaction.currency)}
               </td>
-              {!compact && <td className="py-3 text-center">
-                <div className="relative">
-                  <button
-                    onClick={() => toggleDropdown(transaction.id)}
-                    className="p-1 rounded hover:bg-highlight/20 transition-colors group"
-                    title="More actions"
-                  >
-                    <MoreVerticalIcon size={14} className="text-gray-400 group-hover:text-highlight" />
-                  </button>
-                  
-                  {openDropdown === transaction.id && (
-                    <div className="absolute right-0 top-8 bg-surface border border-border rounded-lg shadow-lg z-50 min-w-[120px]">
-                      <button
-                        onClick={() => handleEdit(transaction)}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-highlight/20 transition-colors flex items-center"
-                      >
-                        <EditIcon size={14} className="mr-2 text-gray-400" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDuplicate(transaction)}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-highlight/20 transition-colors flex items-center"
-                      >
-                        <CopyIcon size={14} className="mr-2 text-gray-400" />
-                        Duplicate
-                      </button>
-                      <button
-                        onClick={() => handleDelete(transaction.id)}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-expense/20 transition-colors flex items-center text-expense"
-                      >
-                        <TrashIcon size={14} className="mr-2" />
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </td>}
             </tr>)}
         </tbody>
       </table>
+      </div>
+
+      {/* Transaction counter for compact mode */}
+      {compact && transactions.length > 0 && (
+        <div className="mt-2 text-sm text-gray-400 text-center">
+          {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
+        </div>
+      )}
+
+      {/* Pagination Controls - only show in non-compact mode */}
+      {!compact && transactions.length > 0 && (
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-400">
+              Showing {startIndex + 1}-{Math.min(endIndex, transactions.length)} of {transactions.length} transactions
+            </span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="bg-surface border border-border text-white rounded px-2 py-1 text-sm"
+            >
+              <option value={10}>10 per page</option>
+              <option value={20}>20 per page</option>
+              <option value={50}>50 per page</option>
+              <option value={90}>90 per page</option>
+            </select>
+          </div>
+          
+          {totalPages > 1 && (
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 bg-surface border border-border text-white rounded text-sm hover:bg-border/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              
+              <span className="text-sm text-gray-400">
+                Page {currentPage} of {totalPages}
+              </span>
+              
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 bg-surface border border-border text-white rounded text-sm hover:bg-border/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>;
 };

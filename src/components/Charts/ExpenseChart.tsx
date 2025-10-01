@@ -54,7 +54,7 @@ export const ExpenseChart: React.FC<ExpenseChartProps> = ({
         fontSize: 12
       }} tickFormatter={value => `$${value}`} />
         <Tooltip content={<CustomTooltip />} />
-        <Bar dataKey="income" fill="#00d9ff" radius={[4, 4, 0, 0]} maxBarSize={40} />
+        <Bar dataKey="income" fill="#00ff41" radius={[4, 4, 0, 0]} maxBarSize={40} />
         <Bar dataKey="expenses" fill="#ff004d" radius={[4, 4, 0, 0]} maxBarSize={40} />
       </BarChart>
     </ResponsiveContainer>;

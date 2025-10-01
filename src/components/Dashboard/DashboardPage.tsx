@@ -59,9 +59,8 @@ export const DashboardPage: React.FC = () => {
   };
   
   const summary = getFilteredSummary();
-  const recentTransactions = filteredTransactions
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
+  const allTransactions = filteredTransactions
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Get the most common currency from transactions
   const getPrimaryCurrency = () => {
@@ -145,6 +144,7 @@ export const DashboardPage: React.FC = () => {
                 className="bg-surface border border-border text-white rounded px-3 py-2 text-sm"
                 wrapperClassName="w-auto"
                 calendarClassName="bg-surface border border-border text-white"
+                popperContainer={({ children }) => <div style={{ zIndex: 9999 }}>{children}</div>}
               />
               <span className="text-gray-400">to</span>
               <DatePicker
@@ -158,6 +158,7 @@ export const DashboardPage: React.FC = () => {
                 className="bg-surface border border-border text-white rounded px-3 py-2 text-sm"
                 wrapperClassName="w-auto"
                 calendarClassName="bg-surface border border-border text-white"
+                popperContainer={({ children }) => <div style={{ zIndex: 9999 }}>{children}</div>}
               />
             </div>
           )}
@@ -171,11 +172,11 @@ export const DashboardPage: React.FC = () => {
       </div>
       {/* Charts and Recent Transactions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card title="Daily Overview" className="min-h-[400px]">
+        <Card title="Monthly Overview" className="min-h-[400px]">
           <ExpenseChart data={chartData} />
         </Card>
-        <Card title="Recent Transactions" className="min-h-[400px]">
-          <TransactionList transactions={recentTransactions} />
+        <Card title="Transactions" className="min-h-[400px]">
+          <TransactionList transactions={allTransactions} compact={true} />
         </Card>
       </div>
     </div>;

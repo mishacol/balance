@@ -119,9 +119,13 @@ class DataBackupService {
       const a = document.createElement('a');
       a.href = url;
       const now = new Date();
-      const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const day = now.getDate().toString().padStart(2, '0');
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = monthNames[now.getMonth()];
+      const year = now.getFullYear();
       const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
-      a.download = `balance-backup-${dateStr}-${timeStr}.json`;
+      a.download = `balance-backup-${day}-${month}-${year}-${timeStr}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

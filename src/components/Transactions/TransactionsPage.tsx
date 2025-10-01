@@ -53,7 +53,38 @@ export const TransactionsPage: React.FC = () => {
     }
   };
 
-  const filteredTransactions = transactions
+  // Use the same filtering logic as Dashboard
+  const getFilteredTransactions = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    return transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      const transactionYear = transactionDate.getFullYear();
+      const transactionMonth = transactionDate.getMonth();
+      
+      switch (selectedTimeRange) {
+        case 'this-month':
+          return transactionYear === currentYear && transactionMonth === currentMonth;
+        case 'last-month':
+          const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+          const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+          return transactionYear === lastMonthYear && transactionMonth === lastMonth;
+        case 'this-year':
+          return transactionYear === currentYear;
+        case 'custom':
+          if (customStartDate && customEndDate) {
+            return transactionDate >= customStartDate && transactionDate <= customEndDate;
+          }
+          return true;
+        default:
+          return true;
+      }
+    });
+  };
+
+  const filteredTransactions = getFilteredTransactions()
     .filter(transaction => {
       const matchesSearch = searchQuery === '' || 
         transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||

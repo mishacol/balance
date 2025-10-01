@@ -22,6 +22,7 @@ export const BackupManager: React.FC = () => {
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [restoreSuccess, setRestoreSuccess] = useState(false);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [showImportSuccess, setShowImportSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const backupInfo = getBackupInfo();
@@ -57,8 +58,7 @@ export const BackupManager: React.FC = () => {
       try {
         const content = e.target?.result as string;
         importData(content);
-        setImportSuccess(true);
-        setTimeout(() => setImportSuccess(false), 3000);
+        setShowImportSuccess(true);
       } catch (error) {
         setImportError('Invalid backup file format');
       } finally {
@@ -255,12 +255,6 @@ export const BackupManager: React.FC = () => {
           </div>
         )}
         
-        {importSuccess && (
-          <div className="bg-income/20 border border-income/30 text-income px-4 py-2 rounded-lg flex items-center">
-            <CheckCircleIcon size={16} className="mr-2" />
-            Backup imported successfully!
-          </div>
-        )}
 
         {backupSuccess && (
           <div className="bg-highlight/20 border border-highlight/30 text-highlight px-4 py-2 rounded-lg flex items-center">
@@ -311,6 +305,34 @@ export const BackupManager: React.FC = () => {
                   className="flex-1 bg-warning/20 hover:bg-warning/30 text-warning px-4 py-2 rounded-lg transition-colors"
                 >
                   Restore Data
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Import Success Dialog */}
+        {showImportSuccess && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-surface border border-border rounded-lg p-6 max-w-md mx-4">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 bg-income/20 rounded-full flex items-center justify-center mr-3">
+                  <CheckCircleIcon size={20} className="text-income" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Import Successful</h3>
+              </div>
+              
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                Your backup has been successfully imported and merged with existing data. 
+                All transactions are now available in your transaction list.
+              </p>
+              
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowImportSuccess(false)}
+                  className="bg-income/20 hover:bg-income/30 text-income px-6 py-2 rounded-lg transition-colors"
+                >
+                  Got it
                 </button>
               </div>
             </div>

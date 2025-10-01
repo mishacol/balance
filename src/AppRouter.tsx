@@ -38,6 +38,16 @@ export function AppRouter() {
         <Route path="/settings" element={<Layout>
               <SettingsPage />
             </Layout>} />
+        <Route path="/faq" element={<Layout>
+              <div className="text-center py-12">
+                <h2 className="text-xl font-bold mb-4">
+                  FAQ Coming Soon
+                </h2>
+                <p className="text-gray-400">
+                  Frequently asked questions will be available here.
+                </p>
+              </div>
+            </Layout>} />
       </Routes>
     </BrowserRouter>;
 }
