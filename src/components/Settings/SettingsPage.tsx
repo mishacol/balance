@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Card } from '../ui/Card';
-import { SettingsIcon, DollarSignIcon } from 'lucide-react';
+import { SettingsIcon, DollarSignIcon, ShieldIcon } from 'lucide-react';
+import { useTransactionStore } from '../../store/transactionStore';
 
 export const SettingsPage: React.FC = () => {
   const [baseCurrency, setBaseCurrency] = useState('USD');
+  const { backupMode, setBackupMode } = useTransactionStore();
 
   const currencies = [
     { code: 'AOA', name: 'Angolan Kwanza', symbol: 'Kz' },
@@ -106,6 +108,10 @@ export const SettingsPage: React.FC = () => {
     // TODO: Save to localStorage and update app-wide currency
   };
 
+  const handleBackupModeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setBackupMode(event.target.value as 'manual' | 'automatic');
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -153,12 +159,38 @@ export const SettingsPage: React.FC = () => {
           </div>
         </Card>
 
+        {/* Backup Settings */}
+        <Card title="Backup Settings" className="mb-6">
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <ShieldIcon size={20} className="text-highlight" />
+              <div className="flex-1">
+                <label htmlFor="backup-mode" className="block text-sm font-medium text-gray-300 mb-2">
+                  Backup Mode
+                </label>
+                <p className="text-xs text-gray-400 mb-3">
+                  Choose how backups are created. Manual requires user action, Automatic creates backups every 15 minutes.
+                </p>
+                <select
+                  id="backup-mode"
+                  value={backupMode}
+                  onChange={handleBackupModeChange}
+                  className="bg-surface border border-border text-white rounded px-3 py-2 text-sm w-full max-w-xs"
+                >
+                  <option value="manual">Manual</option>
+                  <option value="automatic">Automatic (Every 15 minutes)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </Card>
+
         <Card title="Data Settings" className="mb-6">
           <div className="text-center py-8">
             <SettingsIcon size={48} className="text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-300 mb-2">Coming Soon</h3>
             <p className="text-sm text-gray-400">
-              Data management and export options will be available soon.
+              More data management and export options will be available soon.
             </p>
           </div>
         </Card>

@@ -118,7 +118,10 @@ class DataBackupService {
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `balance-backup-${new Date().toISOString().split('T')[0]}.json`;
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
+      a.download = `balance-backup-${dateStr}-${timeStr}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

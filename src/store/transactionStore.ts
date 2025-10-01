@@ -5,6 +5,8 @@ import { dataBackupService } from '../services/dataBackupService';
 
 interface TransactionStore {
   transactions: Transaction[];
+  backupMode: 'manual' | 'automatic';
+  setBackupMode: (mode: 'manual' | 'automatic') => void;
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
@@ -27,6 +29,7 @@ export const useTransactionStore = create<TransactionStore>()(
   persist(
     (set, get) => ({
       transactions: [],
+      backupMode: 'manual',
 
       addTransaction: (transaction) => {
         const newTransaction: Transaction = {
@@ -35,8 +38,10 @@ export const useTransactionStore = create<TransactionStore>()(
         };
         set((state) => {
           const newTransactions = [...state.transactions, newTransaction];
-          // Create backup after adding transaction
-          setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
+          // Create backup only if in manual mode (automatic backups are handled by timer)
+          if (state.backupMode === 'manual') {
+            setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
+          }
           return { transactions: newTransactions };
         });
       },
@@ -48,8 +53,10 @@ export const useTransactionStore = create<TransactionStore>()(
               ? { ...transaction, ...updatedTransaction }
               : transaction
           );
-          // Create backup after updating transaction
-          setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
+          // Create backup only if in manual mode (automatic backups are handled by timer)
+          if (state.backupMode === 'manual') {
+            setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
+          }
           return { transactions: newTransactions };
         });
       },
@@ -59,8 +66,10 @@ export const useTransactionStore = create<TransactionStore>()(
           const newTransactions = state.transactions.filter(
             (transaction) => transaction.id !== id
           );
-          // Create backup after deleting transaction
-          setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
+          // Create backup only if in manual mode (automatic backups are handled by timer)
+          if (state.backupMode === 'manual') {
+            setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
+          }
           return { transactions: newTransactions };
         });
       },
@@ -141,6 +150,10 @@ export const useTransactionStore = create<TransactionStore>()(
             transaction.description.toLowerCase().includes(lowercaseQuery) ||
             transaction.category.toLowerCase().includes(lowercaseQuery)
         );
+      },
+
+      setBackupMode: (mode) => {
+        set({ backupMode: mode });
       },
 
       // Backup and recovery methods
