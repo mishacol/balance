@@ -7,7 +7,9 @@ import { v4 as uuidv4 } from 'uuid';
 interface TransactionStore {
   transactions: Transaction[];
   backupMode: 'manual' | 'automatic';
+  baseCurrency: string;
   setBackupMode: (mode: 'manual' | 'automatic') => void;
+  setBaseCurrency: (currency: string) => void;
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
@@ -31,6 +33,7 @@ export const useTransactionStore = create<TransactionStore>()(
     (set, get) => ({
       transactions: [],
       backupMode: 'manual',
+      baseCurrency: 'EUR',
 
       addTransaction: (transaction) => {
         const newTransaction: Transaction = {
@@ -155,6 +158,10 @@ export const useTransactionStore = create<TransactionStore>()(
 
       setBackupMode: (mode) => {
         set({ backupMode: mode });
+      },
+
+      setBaseCurrency: (currency) => {
+        set({ baseCurrency: currency });
       },
 
       // Backup and recovery methods

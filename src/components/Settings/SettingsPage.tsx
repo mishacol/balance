@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card } from '../ui/Card';
 import { SettingsIcon, DollarSignIcon, ShieldIcon } from 'lucide-react';
 import { useTransactionStore } from '../../store/transactionStore';
 
 export const SettingsPage: React.FC = () => {
-  const [baseCurrency, setBaseCurrency] = useState('USD');
-  const { backupMode, setBackupMode } = useTransactionStore();
+  const { backupMode, setBackupMode, baseCurrency, setBaseCurrency } = useTransactionStore();
 
   const currencies = [
     { code: 'AOA', name: 'Angolan Kwanza', symbol: 'Kz' },
@@ -105,7 +104,6 @@ export const SettingsPage: React.FC = () => {
 
   const handleCurrencyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setBaseCurrency(event.target.value);
-    // TODO: Save to localStorage and update app-wide currency
   };
 
   const handleBackupModeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {

@@ -1,19 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { SummaryCard } from './SummaryCard';
 import { Card } from '../ui/Card';
 import { TransactionList } from '../Transactions/TransactionList';
 import { ExpenseChart } from '../Charts/ExpenseChart';
 import { useTransactionStore } from '../../store/transactionStore';
+import { currencyService } from '../../services/currencyService';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 export const DashboardPage: React.FC = () => {
-  const { transactions, getFinancialSummary } = useTransactionStore();
+  const { transactions, getFinancialSummary, baseCurrency } = useTransactionStore();
+  
+  // Debug: Log all transactions to see what we have
+  console.log(`🔍 [DEBUG] Total transactions in store: ${transactions.length}`);
+  if (transactions.length > 0) {
+    console.log(`🔍 [DEBUG] Transaction dates:`, transactions.map(t => ({ id: t.id, date: t.date, type: t.type, amount: t.amount })));
+    console.log(`🔍 [DEBUG] Sample dates:`, transactions.slice(0, 5).map(t => t.date));
+    console.log(`🔍 [DEBUG] Current date:`, new Date().toISOString().split('T')[0]);
+    console.log(`🔍 [DEBUG] Current month/year:`, new Date().getMonth() + 1, new Date().getFullYear());
+  }
+  
   const [selectedTimeRange, setSelectedTimeRange] = useState('this-month');
   const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
   const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
+  const [summary, setSummary] = useState({ totalIncome: 0, totalExpenses: 0, totalInvestments: 0, balance: 0 });
+  const [isConvertingCurrency, setIsConvertingCurrency] = useState(false);
   
-  // Filter transactions based on selected time range
-  const getFilteredTransactions = () => {
+  // Filter transactions based on selected time range - memoized to prevent infinite loops
+  const filteredTransactions = useMemo(() => {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
@@ -41,77 +54,179 @@ export const DashboardPage: React.FC = () => {
           return true;
       }
     });
-  };
+  }, [transactions, selectedTimeRange, customStartDate, customEndDate]);
+
+  // Filter transactions for cumulative calculations (Investments & Balance cards)
+  const cumulativeTransactions = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    let cutoffDate: Date;
+    switch (selectedTimeRange) {
+      case 'this-month':
+        cutoffDate = new Date(currentYear, currentMonth + 1, 0); // End of current month
+        break;
+      case 'last-month':
+        const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+        const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+        cutoffDate = new Date(lastMonthYear, lastMonth + 1, 0); // End of last month
+        break;
+      case 'this-year':
+        cutoffDate = new Date(currentYear, 11, 31); // End of current year
+        break;
+      case 'custom':
+        cutoffDate = customEndDate || new Date();
+        break;
+      default:
+        cutoffDate = new Date();
+    }
+    
+    return transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return transactionDate <= cutoffDate;
+    });
+  }, [transactions, selectedTimeRange, customEndDate]);
   
-  const filteredTransactions = getFilteredTransactions();
-  
-  // Calculate summary based on filtered transactions
-  const getFilteredSummary = () => {
+  // Calculate summary based on filtered transactions - WITH CURRENCY CONVERSION AND LOGS
+  const getFilteredSummary = useMemo(() => {
+    console.log(`📊 [DASHBOARD] Period transactions: ${filteredTransactions.length}, Cumulative transactions: ${cumulativeTransactions.length}`);
+    console.log(`📊 [DASHBOARD] Base currency: ${baseCurrency}`);
+    
+    // Income and Expenses: only from selected period
     const totalIncome = filteredTransactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + t.amount, 0);
+
     const totalExpenses = filteredTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
-    const totalInvestments = filteredTransactions
+
+    // Investments and Balance: cumulative up to selected period
+    const totalInvestments = cumulativeTransactions
       .filter(t => t.type === 'investment')
       .reduce((sum, t) => sum + t.amount, 0);
     
-    // Calculate cumulative balance up to and including the selected period
-    const getCumulativeBalanceUpToPeriod = () => {
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth();
-      
-      let cutoffDate: Date;
-      
-      switch (selectedTimeRange) {
-        case 'this-month':
-          cutoffDate = new Date(currentYear, currentMonth + 1, 0); // End of current month
-          break;
-        case 'last-month':
-          const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-          const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-          cutoffDate = new Date(lastMonthYear, lastMonth + 1, 0); // End of last month
-          break;
-        case 'this-year':
-          cutoffDate = new Date(currentYear, 11, 31); // End of current year
-          break;
-        case 'custom':
-          cutoffDate = customEndDate || new Date();
-          break;
-        default:
-          cutoffDate = new Date();
-      }
-      
-      // Sum all transactions up to and including the cutoff date
-      const transactionsUpToPeriod = transactions.filter(transaction => {
-        const transactionDate = new Date(transaction.date);
-        return transactionDate <= cutoffDate;
-      });
-      
-      const incomeUpToPeriod = transactionsUpToPeriod
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
-      const expensesUpToPeriod = transactionsUpToPeriod
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
-      const investmentsUpToPeriod = transactionsUpToPeriod
-        .filter(t => t.type === 'investment')
-        .reduce((sum, t) => sum + t.amount, 0);
-      
-      // Balance = Income - Expenses - Investments (investments reduce available balance)
-      return incomeUpToPeriod - expensesUpToPeriod - investmentsUpToPeriod;
-    };
+    console.log(`📊 [DASHBOARD] Original amounts - Income: ${totalIncome}, Expenses: ${totalExpenses}, Investments: ${totalInvestments}`);
     
-    const balance = getCumulativeBalanceUpToPeriod();
+    // Calculate cumulative balance up to and including the selected period
+    const balance = cumulativeTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0) -
+      cumulativeTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0) -
+      cumulativeTransactions
+      .filter(t => t.type === 'investment')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    console.log(`📊 [DASHBOARD] Final summary - Income: ${totalIncome}, Expenses: ${totalExpenses}, Investments: ${totalInvestments}, Balance: ${balance}`);
 
     return { totalIncome, totalExpenses, totalInvestments, balance };
-  };
+  }, [filteredTransactions, cumulativeTransactions, selectedTimeRange, customEndDate, baseCurrency]);
   
-  const summary = getFilteredSummary();
-  const allTransactions = filteredTransactions
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // Update summary when transactions or base currency changes - WITH ASYNC CURRENCY CONVERSION
+  useEffect(() => {
+    const updateSummaryWithConversion = async () => {
+      console.log(`🔄 [DASHBOARD] Starting currency conversion process`);
+      setIsConvertingCurrency(true);
+      
+      try {
+        // Get base summary first
+        const baseSummary = getFilteredSummary;
+        console.log(`📊 [DASHBOARD] Base summary:`, baseSummary);
+        
+        // Check if we need currency conversion
+        const needsConversion = filteredTransactions.some(t => t.currency !== baseCurrency) || 
+                               cumulativeTransactions.some(t => t.currency !== baseCurrency);
+        
+        if (!needsConversion) {
+          console.log(`✅ [DASHBOARD] No conversion needed - all transactions in ${baseCurrency}`);
+          setSummary(baseSummary);
+          return;
+        }
+        
+        console.log(`💰 [DASHBOARD] Converting currencies to ${baseCurrency}`);
+        
+        // Convert period transactions (for Income/Expenses)
+        const periodAmountsToConvert = filteredTransactions.map(t => ({
+          amount: t.amount,
+          currency: t.currency
+        }));
+        
+        const convertedPeriodAmounts = await currencyService.convertAmounts(periodAmountsToConvert, baseCurrency);
+        
+        // Convert cumulative transactions (for Investments/Balance)
+        const cumulativeAmountsToConvert = cumulativeTransactions.map(t => ({
+          amount: t.amount,
+          currency: t.currency
+        }));
+        
+        const convertedCumulativeAmounts = await currencyService.convertAmounts(cumulativeAmountsToConvert, baseCurrency);
+        
+        console.log(`✅ [DASHBOARD] Conversion completed`);
+        
+        // Calculate converted summary
+        let convertedIncome = 0;
+        let convertedExpenses = 0;
+        
+        filteredTransactions.forEach((transaction, index) => {
+          const convertedAmount = convertedPeriodAmounts[index].convertedAmount;
+          
+          if (transaction.type === 'income') {
+            convertedIncome += convertedAmount;
+          } else if (transaction.type === 'expense') {
+            convertedExpenses += convertedAmount;
+          }
+        });
+        
+        let convertedInvestments = 0;
+        let convertedBalance = 0;
+        
+        cumulativeTransactions.forEach((transaction, index) => {
+          const convertedAmount = convertedCumulativeAmounts[index].convertedAmount;
+          
+          if (transaction.type === 'investment') {
+            convertedInvestments += convertedAmount;
+          }
+          
+          if (transaction.type === 'income') {
+            convertedBalance += convertedAmount;
+          } else if (transaction.type === 'expense') {
+            convertedBalance -= convertedAmount;
+          } else if (transaction.type === 'investment') {
+            convertedBalance -= convertedAmount;
+          }
+        });
+        
+        const convertedSummary = {
+          totalIncome: convertedIncome,
+          totalExpenses: convertedExpenses,
+          totalInvestments: convertedInvestments, // Use converted cumulative investments
+          balance: convertedBalance
+        };
+        
+        console.log(`✅ [DASHBOARD] Final converted summary:`, convertedSummary);
+        setSummary(convertedSummary);
+        
+      } catch (error) {
+        console.error(`❌ [DASHBOARD] Currency conversion failed:`, error);
+        // Fallback to base summary
+        const fallbackSummary = getFilteredSummary;
+        console.log(`🔄 [DASHBOARD] Using fallback summary:`, fallbackSummary);
+        setSummary(fallbackSummary);
+      } finally {
+        setIsConvertingCurrency(false);
+        console.log(`🏁 [DASHBOARD] Currency conversion process completed`);
+      }
+    };
+    
+    updateSummaryWithConversion();
+  }, [getFilteredSummary, baseCurrency, filteredTransactions, cumulativeTransactions, selectedTimeRange, customEndDate]);
+  const allTransactions = useMemo(() => 
+    filteredTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    [filteredTransactions]
+  );
 
   // Get period name for display
   const getPeriodName = () => {
@@ -242,10 +357,10 @@ export const DashboardPage: React.FC = () => {
       </div>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <SummaryCard title="Income" amount={summary.totalIncome} type="income" currency={primaryCurrency} date={getPeriodName()} />
-        <SummaryCard title="Expenses" amount={summary.totalExpenses} type="expense" currency={primaryCurrency} date={getPeriodName()} />
-        <SummaryCard title="Investments" amount={summary.totalInvestments} type="investment" currency={primaryCurrency} date={getPeriodName()} />
-        <SummaryCard title="Balance" amount={summary.balance} type="balance" currency={primaryCurrency} date={getPeriodName()} />
+        <SummaryCard title="Income" amount={summary.totalIncome} type="income" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
+        <SummaryCard title="Expenses" amount={summary.totalExpenses} type="expense" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
+        <SummaryCard title="Investments" amount={summary.totalInvestments} type="investment" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
+        <SummaryCard title="Balance" amount={summary.balance} type="balance" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
       </div>
       {/* Charts and Recent Transactions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

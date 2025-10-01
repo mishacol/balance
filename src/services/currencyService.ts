@@ -5,128 +5,159 @@ export interface ExchangeRates {
 }
 
 export interface CurrencyResponse {
-  success: boolean;
-  timestamp: number;
-  base: string;
-  date: string;
-  rates: ExchangeRates;
+  error: number;
+  error_message: string;
+  amount: number;
 }
 
 class CurrencyService {
-  private cache: { [key: string]: { data: ExchangeRates; timestamp: number } } = {};
+  private cache: { [key: string]: { data: number; timestamp: number } } = {};
   private readonly CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
+  private readonly API_KEY = 'YigRbqKy98XUu7DFPGMQMPLSQCH4vE';
+  private readonly BASE_URL = 'https://www.amdoren.com/api/currency.php';
   private apiFailureCount = 0;
   private readonly MAX_FAILURES = 3;
   private lastFailureTime = 0;
   private readonly FAILURE_COOLDOWN = 5 * 60 * 1000; // 5 minutes
 
-  async getExchangeRates(baseCurrency: string = 'USD'): Promise<ExchangeRates> {
-    const cacheKey = baseCurrency;
-    const now = Date.now();
+  private getCacheKey(from: string, to: string): string {
+    return `${from}-${to}`;
+  }
+
+  private isCacheValid(timestamp: number): boolean {
+    return Date.now() - timestamp < this.CACHE_DURATION;
+  }
+
+  async getExchangeRate(from: string, to: string): Promise<number> {
+    if (from === to) return 1;
+
+    console.log(`🔄 [CURRENCY] Getting exchange rate: ${from} → ${to}`);
+
+    const cacheKey = this.getCacheKey(from, to);
+    const cached = this.cache[cacheKey];
 
     // Check if we have cached data that's still valid
-    if (this.cache[cacheKey] && (now - this.cache[cacheKey].timestamp) < this.CACHE_DURATION) {
-      return this.cache[cacheKey].data;
+    if (cached && this.isCacheValid(cached.timestamp)) {
+      console.log(`✅ [CURRENCY] Using cached rate: ${from} → ${to} = ${cached.data}`);
+      return cached.data;
     }
 
     // Circuit breaker: if API has failed too many times recently, use fallback
+    const now = Date.now();
     if (this.apiFailureCount >= this.MAX_FAILURES && 
         (now - this.lastFailureTime) < this.FAILURE_COOLDOWN) {
       console.warn('API circuit breaker active, using fallback rates');
-      return this.getFallbackRates(baseCurrency);
+      return this.getFallbackRate(from, to);
     }
 
     try {
-      // Using CurrencyAPI.io with your API key
-      const response = await axios.get(
-        `https://api.currencyapi.com/v3/latest?apikey=cur_live_FW8vQMGv9ZVUe3NiADSbCbEpx0S2hPDrVJd6Mkac&currencies=USD,EUR,GBP,JPY,MDL&base_currency=${baseCurrency}`,
-        {
-          timeout: 1500,
-          headers: {
-            'Accept': 'application/json',
-          }
+      console.log(`🌐 [CURRENCY] Making API call: ${from} → ${to}`);
+      const response = await axios.get(this.BASE_URL, {
+        params: {
+          api_key: this.API_KEY,
+          from: from,
+          to: to,
+          amount: 1
+        },
+        timeout: 5000,
+        headers: {
+          'Accept': 'application/json',
         }
-      );
+      });
 
-      if (response.data && response.data.data) {
+      if (response.data && response.data.error === 0) {
         // Reset failure count on success
         this.apiFailureCount = 0;
         
-        // Convert CurrencyAPI format to our format
-        const rates: ExchangeRates = {};
-        Object.entries(response.data.data).forEach(([currency, rateData]: [string, any]) => {
-          rates[currency] = rateData.value;
-        });
+        const rate = response.data.amount;
+        console.log(`✅ [CURRENCY] API success: ${from} → ${to} = ${rate}`);
         
         // Cache the data
         this.cache[cacheKey] = {
-          data: rates,
+          data: rate,
           timestamp: now
         };
 
-        return rates;
+        return rate;
       } else {
-        throw new Error('Invalid response format');
+        throw new Error(`API Error: ${response.data?.error_message || 'Unknown error'}`);
       }
     } catch (error) {
       // Increment failure count and record failure time
       this.apiFailureCount++;
       this.lastFailureTime = now;
       
-      console.warn(`API failure ${this.apiFailureCount}/${this.MAX_FAILURES}, using fallback rates`);
+      console.warn(`❌ [CURRENCY] API failure ${this.apiFailureCount}/${this.MAX_FAILURES}, using fallback rates`);
+      console.error(`❌ [CURRENCY] Error:`, error);
       
-      // Cache fallback rates to avoid repeated API calls
-      const fallbackRates = this.getFallbackRates(baseCurrency);
+      // Cache fallback rate to avoid repeated API calls
+      const fallbackRate = this.getFallbackRate(from, to);
+      console.log(`🔄 [CURRENCY] Using fallback rate: ${from} → ${to} = ${fallbackRate}`);
       this.cache[cacheKey] = {
-        data: fallbackRates,
+        data: fallbackRate,
         timestamp: now
       };
       
-      return fallbackRates;
+      return fallbackRate;
     }
   }
 
-  private getFallbackRates(baseCurrency: string): ExchangeRates {
+  private getFallbackRate(from: string, to: string): number {
     // Fallback rates (approximate, for when API is unavailable)
-    const fallbackRates: { [key: string]: ExchangeRates } = {
+    const fallbackRates: { [key: string]: { [key: string]: number } } = {
       USD: {
-        USD: 1,
         EUR: 0.85,
         GBP: 0.73,
         JPY: 110,
-        MDL: 18.5
+        MDL: 18.5,
+        RUB: 75.0,
+        CHF: 0.88,
+        CAD: 1.25,
+        AUD: 1.35
       },
       EUR: {
         USD: 1.18,
-        EUR: 1,
         GBP: 0.86,
         JPY: 129,
-        MDL: 21.8
+        MDL: 21.8,
+        RUB: 88.0,
+        CHF: 1.04,
+        CAD: 1.47,
+        AUD: 1.59
       },
       GBP: {
         USD: 1.37,
         EUR: 1.16,
-        GBP: 1,
         JPY: 150,
-        MDL: 25.3
+        MDL: 25.3,
+        RUB: 102.0,
+        CHF: 1.20,
+        CAD: 1.71,
+        AUD: 1.85
       },
       JPY: {
         USD: 0.0091,
         EUR: 0.0077,
         GBP: 0.0067,
-        JPY: 1,
-        MDL: 0.17
+        MDL: 0.17,
+        RUB: 0.68,
+        CHF: 0.008,
+        CAD: 0.011,
+        AUD: 0.012
       },
       MDL: {
         USD: 0.054,
         EUR: 0.046,
         GBP: 0.04,
         JPY: 5.9,
-        MDL: 1
+        RUB: 4.05,
+        CHF: 0.048,
+        CAD: 0.068,
+        AUD: 0.074
       }
     };
 
-    return fallbackRates[baseCurrency] || { [baseCurrency]: 1 };
+    return fallbackRates[from]?.[to] || 1;
   }
 
   async convertAmount(
@@ -135,31 +166,74 @@ class CurrencyService {
     toCurrency: string
   ): Promise<number> {
     if (fromCurrency === toCurrency) {
+      console.log(`🔄 [CURRENCY] Same currency, no conversion needed: ${amount} ${fromCurrency}`);
       return amount;
     }
 
-    const rates = await this.getExchangeRates(fromCurrency);
-    const rate = rates[toCurrency];
+    console.log(`💰 [CURRENCY] Converting: ${amount} ${fromCurrency} → ${toCurrency}`);
+    const rate = await this.getExchangeRate(fromCurrency, toCurrency);
+    const convertedAmount = amount * rate;
+    console.log(`✅ [CURRENCY] Converted: ${amount} ${fromCurrency} × ${rate} = ${convertedAmount} ${toCurrency}`);
+    return convertedAmount;
+  }
 
-    if (!rate) {
-      console.warn(`Exchange rate not found for ${fromCurrency} to ${toCurrency}`);
-      return amount; // Return original amount if conversion fails
-    }
-
-    return amount * rate;
+  // Convert multiple amounts at once
+  async convertAmounts(
+    amounts: Array<{ amount: number; currency: string }>,
+    toCurrency: string
+  ): Promise<Array<{ amount: number; currency: string; convertedAmount: number }>> {
+    console.log(`🔄 [CURRENCY] Converting ${amounts.length} amounts to ${toCurrency}`);
+    const conversions = await Promise.all(
+      amounts.map(async ({ amount, currency }) => ({
+        amount,
+        currency,
+        convertedAmount: await this.convertAmount(amount, currency, toCurrency),
+      }))
+    );
+    console.log(`✅ [CURRENCY] Completed conversion of ${amounts.length} amounts`);
+    return conversions;
   }
 
   getSupportedCurrencies(): string[] {
-    return ['USD', 'EUR', 'GBP', 'JPY', 'MDL'];
+    return [
+      'USD', 'EUR', 'GBP', 'JPY', 'MDL', 'RUB', 'CHF', 'CAD', 'AUD', 'NZD',
+      'CNY', 'HKD', 'SGD', 'KRW', 'INR', 'BRL', 'MXN', 'ZAR', 'TRY', 'PLN',
+      'CZK', 'HUF', 'RON', 'BGN', 'HRK', 'SEK', 'NOK', 'DKK', 'ISK', 'THB',
+      'PHP', 'IDR', 'MYR', 'VND', 'ILS', 'AED', 'SAR', 'QAR', 'KWD', 'BHD',
+      'OMR', 'JOD', 'LBP', 'EGP', 'MAD', 'TND', 'DZD', 'LYD', 'ETB', 'KES',
+      'UGX', 'TZS', 'ZMW', 'BWP', 'NAD', 'SZL', 'LSL', 'MUR', 'SCR', 'MVR',
+      'PKR', 'BDT', 'LKR', 'NPR', 'AFN', 'IRR', 'IQD', 'SYP', 'YER', 'JMD',
+      'TTD', 'BBD', 'BZD', 'GYD', 'SRD', 'XCD', 'AWG', 'ANG', 'CUP', 'DOP',
+      'HTG', 'PAB', 'CRC', 'NIO', 'HNL', 'GTQ', 'BMD', 'KYD', 'BSD', 'BHD',
+      'QAR', 'AED', 'SAR', 'OMR', 'KWD', 'BHD', 'JOD', 'LBP', 'EGP', 'MAD',
+      'TND', 'DZD', 'LYD', 'ETB', 'KES', 'UGX', 'TZS', 'ZMW', 'BWP', 'NAD',
+      'SZL', 'LSL', 'MUR', 'SCR', 'MVR', 'PKR', 'BDT', 'LKR', 'NPR', 'AFN',
+      'IRR', 'IQD', 'SYP', 'YER', 'JMD', 'TTD', 'BBD', 'BZD', 'GYD', 'SRD',
+      'XCD', 'AWG', 'ANG', 'CUP', 'DOP', 'HTG', 'PAB', 'CRC', 'NIO', 'HNL',
+      'GTQ', 'BMD', 'KYD', 'BSD', 'BHD', 'QAR', 'AED', 'SAR', 'OMR', 'KWD'
+    ];
   }
 
   getCurrencySymbol(currency: string): string {
     const symbols: { [key: string]: string } = {
-      USD: '$',
-      EUR: '€',
-      GBP: '£',
-      JPY: '¥',
-      MDL: 'L'
+      USD: '$', EUR: '€', GBP: '£', JPY: '¥', MDL: 'L', RUB: '₽',
+      CHF: 'CHF', CAD: 'C$', AUD: 'A$', NZD: 'NZ$', CNY: '¥',
+      HKD: 'HK$', SGD: 'S$', KRW: '₩', INR: '₹', BRL: 'R$',
+      MXN: '$', ZAR: 'R', TRY: '₺', PLN: 'zł', CZK: 'Kč',
+      HUF: 'Ft', RON: 'lei', BGN: 'лв', HRK: 'kn', SEK: 'kr',
+      NOK: 'kr', DKK: 'kr', ISK: 'kr', THB: '฿', PHP: '₱',
+      IDR: 'Rp', MYR: 'RM', VND: '₫', ILS: '₪', AED: 'د.إ',
+      SAR: '﷼', QAR: '﷼', KWD: 'د.ك', BHD: 'د.ب', OMR: '﷼',
+      JOD: 'د.ا', LBP: 'ل.ل', EGP: '£', MAD: 'د.م.', TND: 'د.ت',
+      DZD: 'د.ج', LYD: 'ل.د', ETB: 'Br', KES: 'KSh', UGX: 'USh',
+      TZS: 'TSh', ZMW: 'ZK', BWP: 'P', NAD: 'N$', SZL: 'L',
+      LSL: 'L', MUR: '₨', SCR: '₨', MVR: 'ރ', PKR: '₨',
+      BDT: '৳', LKR: '₨', NPR: '₨', AFN: '؋', IRR: '﷼',
+      IQD: 'د.ع', SYP: '£', YER: '﷼', JMD: 'J$', TTD: 'TT$',
+      BBD: 'Bds$', BZD: 'BZ$', GYD: 'G$', SRD: 'SRD', XCD: 'EC$',
+      AWG: 'ƒ', ANG: 'ƒ', CUP: '$', DOP: 'RD$', HTG: 'G',
+      PAB: 'B/.', CRC: '₡', NIO: 'C$', HNL: 'L', GTQ: 'Q',
+      BMD: 'BD$', KYD: 'CI$', BSD: 'B$'
     };
     return symbols[currency] || currency;
   }

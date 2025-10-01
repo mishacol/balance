@@ -9,6 +9,7 @@ interface SummaryCardProps {
   type?: 'income' | 'expense' | 'balance' | 'investment';
   percentage?: number;
   date?: string;
+  isLoading?: boolean;
 }
 export const SummaryCard: React.FC<SummaryCardProps> = ({
   title,
@@ -16,7 +17,8 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   currency = 'USD',
   type = 'balance',
   percentage,
-  date
+  date,
+  isLoading = false
 }) => {
   const getColor = () => {
     switch (type) {
@@ -37,8 +39,15 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
         <h3 className="text-gray-400 text-sm">{title}</h3>
         {date && <p className="text-gray-500 text-xs mt-1">{date}</p>}
         <div className="mt-2 flex-grow">
-          <div className={`text-2xl font-mono font-medium ${getColor()}`}>
-            {formatCurrency(amount, currency)}
+          <div className={`text-2xl font-mono font-medium ${getColor()} ${isLoading ? 'opacity-50' : ''}`}>
+            {isLoading ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                Converting...
+              </div>
+            ) : (
+              formatCurrency(amount, currency)
+            )}
           </div>
           {percentage !== undefined && <div className="mt-2 flex items-center text-xs">
               {percentage >= 0 ? <ArrowUpIcon size={16} className="text-income mr-1" /> : <ArrowDownIcon size={16} className="text-expense mr-1" />}
