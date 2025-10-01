@@ -60,7 +60,7 @@ export const TransactionForm: React.FC = () => {
     navigate('/transactions');
   };
 
-  const handleTypeChange = (type: 'income' | 'expense') => {
+  const handleTypeChange = (type: 'income' | 'expense' | 'investment') => {
     setSelectedType(type);
     setValue('type', type);
     setValue('category', ''); // Reset category when type changes
@@ -150,7 +150,8 @@ export const TransactionForm: React.FC = () => {
             { value: 'bitcoin', label: 'Bitcoin' },
             { value: 'ethereum', label: 'Ethereum' },
             { value: 'altcoins', label: 'Altcoins' },
-            { value: 'crypto-staking', label: 'Crypto Staking' }
+            { value: 'crypto-staking', label: 'Crypto Staking' },
+            { value: 'binance-p2p', label: 'Binance P2P' }
           ]
         },
         {
@@ -471,7 +472,7 @@ export const TransactionForm: React.FC = () => {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-400 mb-1">
-            Category
+            Category <span className="text-expense">*</span>
           </label>
           <Controller
             name="category"
@@ -482,7 +483,7 @@ export const TransactionForm: React.FC = () => {
                 value={value ? getCategoryOptions().flatMap(group => group.options).find(opt => opt.value === value) : null}
                 onChange={(selectedOption) => onChange(selectedOption?.value || '')}
                 options={getCategoryOptions()}
-                placeholder="Select a category"
+                placeholder="Please select a category"
                 isSearchable
                 isClearable
                 filterOption={(option, inputValue) => {

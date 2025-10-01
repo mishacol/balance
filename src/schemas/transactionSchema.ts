@@ -4,7 +4,7 @@ export const transactionSchema = z.object({
   type: z.enum(['income', 'expense', 'investment']),
   amount: z.number().min(0.01, 'Amount must be greater than 0'),
   currency: z.string().min(1, 'Currency is required'),
-  category: z.string().min(1, 'Category is required'),
+  category: z.string().min(1, 'Please select a category'),
   description: z.string().optional(),
   date: z.string().min(1, 'Date is required'),
 }).refine((data) => {

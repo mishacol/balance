@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { HomeIcon, PieChartIcon, ListIcon, PlusCircleIcon, SettingsIcon, ShieldIcon, HelpCircleIcon } from 'lucide-react';
+import { Logo } from './ui/Logo';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -24,7 +25,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <aside className="w-20 md:w-64 border-r border-border bg-surface">
         <div className="p-4 flex items-center justify-center md:justify-start">
-          <span className="hidden md:inline-block font-mono text-highlight text-xl font-bold">
+          <Logo size={36} className="mr-1" />
+          <span className="hidden md:inline-block font-mono text-highlight text-xl font-bold leading-none">
             balance
           </span>
           <span className="md:hidden text-highlight text-xl font-bold">bal</span>

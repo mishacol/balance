@@ -303,6 +303,7 @@ export const TransactionsPage: React.FC = () => {
       { value: 'ethereum', label: 'Ethereum' },
       { value: 'altcoins', label: 'Altcoins' },
       { value: 'crypto-staking', label: 'Crypto Staking' },
+      { value: 'binance-p2p', label: 'Binance P2P' },
       { value: 'individual-stocks', label: 'Individual Stocks' },
       { value: 'mutual-funds', label: 'Mutual Funds' },
       { value: 'etfs', label: 'ETFs' },
@@ -438,7 +439,7 @@ export const TransactionsPage: React.FC = () => {
     } else if (typeFilter === 'investment') {
       const investmentSubs = allSubcategories.filter(sub => {
         const investmentSubs = ['savings-account', 'term-deposits', 'high-yield-savings', 'money-market',
-          'bitcoin', 'ethereum', 'altcoins', 'crypto-staking',
+          'bitcoin', 'ethereum', 'altcoins', 'crypto-staking', 'binance-p2p',
           'individual-stocks', 'mutual-funds', 'etfs', 'government-bonds', 'corporate-bonds',
           'real-estate-investment', 'reits', 'property-investment',
           'precious-metals', 'commodities', 'trusts', 'other-investments'];
