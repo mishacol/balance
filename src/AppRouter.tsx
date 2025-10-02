@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { App } from './App';
 import { Layout } from './components/Layout';
 import { DashboardPage } from './components/Dashboard/DashboardPage';
@@ -7,6 +7,7 @@ import { TransactionsPage } from './components/Transactions/TransactionsPage';
 import { TransactionForm } from './components/Transactions/TransactionForm';
 import { BackupPage } from './components/Backup/BackupPage';
 import { SettingsPage } from './components/Settings/SettingsPage';
+import { AuthPage } from './components/Auth/AuthPage';
 export function AppRouter() {
   return <BrowserRouter>
       <Routes>
@@ -48,6 +49,8 @@ export function AppRouter() {
                 </p>
               </div>
             </Layout>} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>;
 }

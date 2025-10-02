@@ -171,7 +171,7 @@ export const SettingsPage: React.FC = () => {
                   Backup Mode
                 </label>
                 <p className="text-xs text-gray-400 mb-3">
-                  Choose how backups are created. Manual requires user action, Automatic creates backups every 15 minutes.
+                  Choose how backups are created. Manual requires user action, Automatic creates backups every hour.
                 </p>
                 <select
                   id="backup-mode"
@@ -180,7 +180,7 @@ export const SettingsPage: React.FC = () => {
                   className="bg-surface border border-border text-white rounded px-3 py-2 text-sm w-full max-w-xs"
                 >
                   <option value="manual">Manual</option>
-                  <option value="automatic">Automatic (Every 15 minutes)</option>
+                  <option value="automatic">Automatic (Every hour)</option>
                 </select>
               </div>
             </div>

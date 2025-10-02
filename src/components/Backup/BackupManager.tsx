@@ -11,6 +11,7 @@ export const BackupManager: React.FC = () => {
     exportData, 
     importData, 
     downloadBackup, 
+    clearBackups,
     getBackupInfo,
     backupMode 
   } = useTransactionStore();
@@ -23,9 +24,13 @@ export const BackupManager: React.FC = () => {
   const [restoreSuccess, setRestoreSuccess] = useState(false);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [showImportSuccess, setShowImportSuccess] = useState(false);
+  const [backupInfo, setBackupInfo] = useState(getBackupInfo());
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const backupInfo = getBackupInfo();
+  // Refresh backup info
+  const refreshBackupInfo = () => {
+    setBackupInfo(getBackupInfo());
+  };
 
   const handleExport = () => {
     try {
@@ -59,6 +64,8 @@ export const BackupManager: React.FC = () => {
         const content = e.target?.result as string;
         importData(content);
         setShowImportSuccess(true);
+        // Refresh backup info after importing
+        setTimeout(() => refreshBackupInfo(), 100);
       } catch (error) {
         setImportError('Invalid backup file format');
       } finally {
@@ -81,6 +88,18 @@ export const BackupManager: React.FC = () => {
     createBackup();
     setBackupSuccess(true);
     setTimeout(() => setBackupSuccess(false), 3000);
+    // Refresh backup info after creating backup
+    setTimeout(() => refreshBackupInfo(), 100);
+  };
+
+  const handleClearBackups = () => {
+    if (window.confirm('Are you sure you want to clear all backups? This action cannot be undone.')) {
+      clearBackups();
+      setBackupSuccess(true);
+      setTimeout(() => setBackupSuccess(false), 3000);
+      // Refresh backup info after clearing backups
+      setTimeout(() => refreshBackupInfo(), 100);
+    }
   };
 
   const handleRestore = () => {
@@ -105,6 +124,8 @@ export const BackupManager: React.FC = () => {
       setRestoreSuccess(true);
       setShowRestoreConfirm(false);
       setTimeout(() => setRestoreSuccess(false), 3000);
+      // Refresh backup info after restoring
+      setTimeout(() => refreshBackupInfo(), 100);
     } catch (error) {
       setImportError('Failed to restore from backup');
       setShowRestoreConfirm(false);
@@ -134,7 +155,7 @@ export const BackupManager: React.FC = () => {
               </h4>
               <p className="text-sm text-gray-300 mt-1">
                 {backupMode === 'automatic' 
-                  ? 'Backups are created automatically every 15 minutes'
+                  ? 'Backups are created automatically every hour'
                   : 'Backups are created manually when you add, edit, or delete transactions'
                 }
               </p>
@@ -200,6 +221,21 @@ export const BackupManager: React.FC = () => {
               <p className="text-sm text-gray-300 leading-relaxed">
                 <span className="text-income font-medium">Downloads a JSON file with all your data</span><br/>
                 Save your transactions as a file for external storage or sharing. Includes timestamp.
+              </p>
+            </div>
+
+            {/* Clear Backups */}
+            <div className="bg-surface/30 rounded-lg p-4 border border-border/50">
+              <button
+                onClick={handleClearBackups}
+                className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-3 rounded-lg transition-colors flex items-center justify-center mb-3"
+              >
+                <TrashIcon size={16} className="mr-2" />
+                Clear All Backups
+              </button>
+              <p className="text-sm text-gray-300 leading-relaxed">
+                <span className="text-red-400 font-medium">Permanently deletes all backup data</span><br/>
+                Resets the backup counter to 0. This action cannot be undone.
               </p>
             </div>
           </div>

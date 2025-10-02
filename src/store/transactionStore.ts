@@ -2,12 +2,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Transaction, FinancialSummary, CategoryTotal } from '../types';
 import { dataBackupService } from '../services/dataBackupService';
+import { supabaseService } from '../services/supabaseService';
 
 interface TransactionStore {
   transactions: Transaction[];
   backupMode: 'manual' | 'automatic';
   baseCurrency: string;
   monthlyIncomeTarget: number;
+  isUsingSupabase: boolean;
   setBackupMode: (mode: 'manual' | 'automatic') => void;
   setBaseCurrency: (currency: string) => void;
   setMonthlyIncomeTarget: (target: number) => void;
@@ -26,7 +28,12 @@ interface TransactionStore {
   exportData: () => string;
   importData: (jsonData: string) => void;
   downloadBackup: () => void;
+  clearBackups: () => void;
   getBackupInfo: () => { count: number; latest: Date | null; totalSize: number };
+  // Supabase methods
+  loadTransactionsFromSupabase: () => Promise<void>;
+  migrateFromLocalStorage: () => Promise<void>;
+  switchToSupabase: () => void;
 }
 
 export const useTransactionStore = create<TransactionStore>()(
@@ -36,20 +43,43 @@ export const useTransactionStore = create<TransactionStore>()(
       backupMode: 'manual',
       baseCurrency: 'EUR',
       monthlyIncomeTarget: 0,
+      isUsingSupabase: false,
 
-      addTransaction: (transaction) => {
-        const newTransaction: Transaction = {
-          ...transaction,
-          id: Date.now().toString(),
-        };
-        set((state) => {
-          const newTransactions = [...state.transactions, newTransaction];
-          // Create backup only if in manual mode (automatic backups are handled by timer)
-          if (state.backupMode === 'manual') {
-            setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
+      addTransaction: async (transaction) => {
+        const state = get();
+        
+        if (state.isUsingSupabase) {
+          try {
+            const { error } = await supabaseService.addTransaction(transaction);
+            if (error) throw error;
+            
+            // Reload transactions from Supabase
+            await get().loadTransactionsFromSupabase();
+          } catch (error) {
+            console.error('Failed to add transaction to Supabase:', error);
+            // Fallback to localStorage
+            const newTransaction: Transaction = {
+              ...transaction,
+              id: Date.now().toString(),
+            };
+            set((state) => ({
+              transactions: [...state.transactions, newTransaction]
+            }));
           }
-          return { transactions: newTransactions };
-        });
+        } else {
+          const newTransaction: Transaction = {
+            ...transaction,
+            id: Date.now().toString(),
+          };
+          set((state) => {
+            const newTransactions = [...state.transactions, newTransaction];
+            // Create backup only if in manual mode (automatic backups are handled by timer)
+            if (state.backupMode === 'manual') {
+              setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
+            }
+            return { transactions: newTransactions };
+          });
+        }
       },
 
       updateTransaction: (id, updatedTransaction) => {
@@ -103,33 +133,87 @@ export const useTransactionStore = create<TransactionStore>()(
 
       getFinancialSummary: () => {
         const transactions = get().transactions;
+        
+        // Calculate totals by type
         const totalIncome = transactions
           .filter((t) => t.type === 'income')
           .reduce((sum, t) => sum + t.amount, 0);
         const totalExpenses = transactions
           .filter((t) => t.type === 'expense')
           .reduce((sum, t) => sum + t.amount, 0);
-        const balance = totalIncome - totalExpenses;
+        const totalInvestments = transactions
+          .filter((t) => t.type === 'investment')
+          .reduce((sum, t) => sum + t.amount, 0);
 
+        // Calculate monthly available balance: income - expenses - investments
+        const monthlyAvailable = totalIncome - totalExpenses - totalInvestments;
+
+        // For cumulative calculations, we need to group by month and calculate running totals
+        const monthlyData = new Map<string, { income: number; expenses: number; investments: number }>();
+        
+        transactions.forEach((transaction) => {
+          const date = new Date(transaction.date);
+          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          
+          if (!monthlyData.has(monthKey)) {
+            monthlyData.set(monthKey, { income: 0, expenses: 0, investments: 0 });
+          }
+          
+          const monthData = monthlyData.get(monthKey)!;
+          if (transaction.type === 'income') {
+            monthData.income += transaction.amount;
+          } else if (transaction.type === 'expense') {
+            monthData.expenses += transaction.amount;
+          } else if (transaction.type === 'investment') {
+            monthData.investments += transaction.amount;
+          }
+        });
+
+        // Sort months chronologically
+        const sortedMonths = Array.from(monthlyData.entries()).sort(([a], [b]) => a.localeCompare(b));
+
+        // Calculate cumulative values
+        let cumulativeAvailable = 0;
+        let cumulativeInvestments = 0;
+
+        sortedMonths.forEach(([, data]) => {
+          const monthlyAvailableForMonth = data.income - data.expenses - data.investments;
+          cumulativeAvailable += monthlyAvailableForMonth;
+          cumulativeInvestments += data.investments;
+        });
+
+        // Net balance = cumulative available + cumulative investments
+        const netBalance = cumulativeAvailable + cumulativeInvestments;
+
+        // Currency breakdowns
         const incomeByCurrency: Record<string, number> = {};
         const expensesByCurrency: Record<string, number> = {};
+        const investmentsByCurrency: Record<string, number> = {};
 
         transactions.forEach((transaction) => {
           if (transaction.type === 'income') {
             incomeByCurrency[transaction.currency] =
               (incomeByCurrency[transaction.currency] || 0) + transaction.amount;
-          } else {
+          } else if (transaction.type === 'expense') {
             expensesByCurrency[transaction.currency] =
               (expensesByCurrency[transaction.currency] || 0) + transaction.amount;
+          } else if (transaction.type === 'investment') {
+            investmentsByCurrency[transaction.currency] =
+              (investmentsByCurrency[transaction.currency] || 0) + transaction.amount;
           }
         });
 
         return {
           totalIncome,
           totalExpenses,
-          balance,
+          totalInvestments,
+          monthlyAvailable,
+          cumulativeAvailable,
+          cumulativeInvestments,
+          netBalance,
           incomeByCurrency,
           expensesByCurrency,
+          investmentsByCurrency,
         };
       },
 
@@ -227,12 +311,63 @@ export const useTransactionStore = create<TransactionStore>()(
         dataBackupService.downloadBackup(transactions);
       },
 
+      clearBackups: () => {
+        dataBackupService.clearBackups();
+      },
+
       getBackupInfo: () => {
         return dataBackupService.getBackupInfo();
+      },
+
+      // Supabase methods
+      loadTransactionsFromSupabase: async () => {
+        try {
+          const transactions = await supabaseService.getAllTransactions();
+          set({ transactions });
+          console.log(`✅ [STORE] Loaded ${transactions.length} transactions from Supabase`);
+        } catch (error) {
+          console.error('❌ [STORE] Failed to load transactions from Supabase:', error);
+        }
+      },
+
+      migrateFromLocalStorage: async () => {
+        try {
+          const state = get();
+          if (state.transactions.length === 0) {
+            console.log('ℹ️ [STORE] No transactions to migrate');
+            return;
+          }
+
+          console.log(`🔄 [STORE] Migrating ${state.transactions.length} transactions to Supabase...`);
+          const { error } = await supabaseService.migrateFromLocalStorage(state.transactions);
+          
+          if (error) {
+            console.error('❌ [STORE] Migration failed:', error);
+            return;
+          }
+
+          // Reload from Supabase after migration
+          await get().loadTransactionsFromSupabase();
+          console.log('✅ [STORE] Migration completed successfully');
+        } catch (error) {
+          console.error('❌ [STORE] Migration failed:', error);
+        }
+      },
+
+      switchToSupabase: () => {
+        set({ isUsingSupabase: true });
+        console.log('🔄 [STORE] Switched to Supabase storage');
       },
     }),
     {
       name: 'transaction-storage',
+      partialize: (state) => ({
+        transactions: state.transactions,
+        baseCurrency: state.baseCurrency,
+        monthlyIncomeTarget: state.monthlyIncomeTarget,
+        backupMode: state.backupMode,
+        isUsingSupabase: state.isUsingSupabase,
+      }),
     }
   )
 );

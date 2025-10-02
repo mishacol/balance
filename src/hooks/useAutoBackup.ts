@@ -15,12 +15,12 @@ export const useAutoBackup = () => {
 
     // Set up automatic backup if mode is 'automatic'
     if (backupMode === 'automatic') {
-      console.log('🔄 Starting automatic backup timer (15 minutes)');
+      console.log('🔄 Starting automatic backup timer (1 hour)');
       
       intervalRef.current = setInterval(() => {
         console.log('⏰ Creating automatic backup...');
         dataBackupService.createBackup(transactions);
-      }, 15 * 60 * 1000); // 15 minutes in milliseconds
+      }, 60 * 60 * 1000); // 1 hour in milliseconds
     } else {
       console.log('⏹️ Automatic backup disabled (manual mode)');
     }

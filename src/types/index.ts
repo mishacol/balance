@@ -15,7 +15,12 @@ export interface CategoryTotal {
 export interface FinancialSummary {
   totalIncome: number;
   totalExpenses: number;
-  balance: number;
+  totalInvestments: number;
+  monthlyAvailable: number;
+  cumulativeAvailable: number;
+  cumulativeInvestments: number;
+  netBalance: number;
   incomeByCurrency: Record<string, number>;
   expensesByCurrency: Record<string, number>;
+  investmentsByCurrency: Record<string, number>;
 }

@@ -6,7 +6,9 @@ export function App() {
   // Initialize automatic backup system
   useAutoBackup();
 
-  return <div className="bg-background text-white min-h-screen">
+  return (
+    <div className="bg-background text-white min-h-screen">
       <AppRouter />
-    </div>;
+    </div>
+  );
 }

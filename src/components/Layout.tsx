@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { HomeIcon, PieChartIcon, ListIcon, PlusCircleIcon, SettingsIcon, ShieldIcon, HelpCircleIcon } from 'lucide-react';
+import { HomeIcon, PieChartIcon, ListIcon, PlusCircleIcon, SettingsIcon, ShieldIcon, HelpCircleIcon, LogInIcon } from 'lucide-react';
 import { Logo } from './ui/Logo';
 
 interface LayoutProps {
@@ -17,7 +17,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: '/analytics', icon: <PieChartIcon size={20} />, label: 'Analytics' },
     { path: '/backup', icon: <ShieldIcon size={20} />, label: 'Backup' },
     { path: '/settings', icon: <SettingsIcon size={20} />, label: 'Settings' },
-    { path: '/faq', icon: <HelpCircleIcon size={20} />, label: 'FAQ' }
+    { path: '/faq', icon: <HelpCircleIcon size={20} />, label: 'FAQ' },
+    { path: '/auth', icon: <LogInIcon size={20} />, label: 'Sign In' }
   ];
 
   return (

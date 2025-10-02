@@ -4,6 +4,7 @@ import { Transaction } from '../../types';
 import { formatCurrency, formatDate, formatShortDate } from '../../utils/formatters';
 import { ArrowUpRightIcon, ArrowDownLeftIcon, EditIcon, TrashIcon, MoreVerticalIcon, CopyIcon } from 'lucide-react';
 import { useTransactionStore } from '../../store/transactionStore';
+import { currencyService } from '../../services/currencyService';
 interface TransactionListProps {
   transactions: Transaction[];
   compact?: boolean;
@@ -23,11 +24,13 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   customEndDate = null
 }) => {
   const navigate = useNavigate();
-  const { deleteTransaction, addTransaction } = useTransactionStore();
+  const { deleteTransaction, addTransaction, baseCurrency } = useTransactionStore();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [averageType, setAverageType] = useState<'per-transaction' | 'per-day'>('per-transaction');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [convertedTotal, setConvertedTotal] = useState(0);
+  const [isConverting, setIsConverting] = useState(false);
 
   // Pagination logic - only for non-compact mode
   const totalPages = compact ? 1 : Math.ceil(transactions.length / itemsPerPage);
@@ -39,6 +42,48 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   useEffect(() => {
     setCurrentPage(1);
   }, [transactions.length]);
+
+  // Calculate converted total when transactions or base currency changes
+  useEffect(() => {
+    const calculateConvertedTotal = async () => {
+      if (transactions.length === 0) {
+        setConvertedTotal(0);
+        return;
+      }
+
+      setIsConverting(true);
+      try {
+        // Check if we need currency conversion
+        const needsConversion = transactions.some(t => t.currency !== baseCurrency);
+        
+        if (!needsConversion) {
+          // All transactions are in base currency, just sum them
+          const total = transactions.reduce((sum, t) => sum + t.amount, 0);
+          setConvertedTotal(total);
+          return;
+        }
+
+        // Convert all amounts to base currency
+        const amountsToConvert = transactions.map(t => ({
+          amount: t.amount,
+          currency: t.currency
+        }));
+
+        const convertedAmounts = await currencyService.convertAmounts(amountsToConvert, baseCurrency);
+        const total = convertedAmounts.reduce((sum, item) => sum + item.convertedAmount, 0);
+        setConvertedTotal(total);
+      } catch (error) {
+        console.error('Failed to convert currencies:', error);
+        // Fallback to simple sum if conversion fails
+        const total = transactions.reduce((sum, t) => sum + t.amount, 0);
+        setConvertedTotal(total);
+      } finally {
+        setIsConverting(false);
+      }
+    };
+
+    calculateConvertedTotal();
+  }, [transactions, baseCurrency]);
 
   const handleEdit = (transaction: Transaction) => {
     navigate(`/edit-transaction/${transaction.id}`);
@@ -208,20 +253,31 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             <div className="flex items-center justify-between text-xs font-semibold text-gray-300">
               <span>Total Transactions: {filteredForSummary.length}</span>
               <span>
-                Total: {formatCurrency(
-                  filteredForSummary.reduce((sum, t) => sum + t.amount, 0),
-                  primaryCurrency
+                Total: {isConverting ? (
+                  <span className="flex items-center">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                    Converting...
+                  </span>
+                ) : (
+                  formatCurrency(convertedTotal, baseCurrency)
                 )}
               </span>
               <div className="flex items-center space-x-2">
                 <span>
-                  Average: {formatCurrency(
-                    filteredForSummary.length > 0 
-                      ? averageType === 'per-transaction'
-                        ? filteredForSummary.reduce((sum, t) => sum + t.amount, 0) / filteredForSummary.length
-                        : filteredForSummary.reduce((sum, t) => sum + t.amount, 0) / daysInPeriod
-                      : 0,
-                    primaryCurrency
+                  Average: {isConverting ? (
+                    <span className="flex items-center">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                      Converting...
+                    </span>
+                  ) : (
+                    formatCurrency(
+                      filteredForSummary.length > 0 
+                        ? averageType === 'per-transaction'
+                          ? convertedTotal / filteredForSummary.length
+                          : convertedTotal / daysInPeriod
+                        : 0,
+                      baseCurrency
+                    )
                   )}
                 </span>
                 <select
