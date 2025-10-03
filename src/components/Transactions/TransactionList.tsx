@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Transaction } from '../../types';
 import { formatCurrency, formatDate, formatShortDate } from '../../utils/formatters';
-import { ArrowUpRightIcon, ArrowDownLeftIcon, EditIcon, TrashIcon, MoreVerticalIcon, CopyIcon } from 'lucide-react';
+import { ArrowUpRightIcon, ArrowDownLeftIcon, EditIcon, TrashIcon, MoreVerticalIcon, CopyIcon, ChevronUpIcon, ChevronDownIcon } from 'lucide-react';
 import { useTransactionStore } from '../../store/transactionStore';
 import { currencyService } from '../../services/currencyService';
 interface TransactionListProps {
@@ -31,12 +31,41 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [convertedTotal, setConvertedTotal] = useState(0);
   const [isConverting, setIsConverting] = useState(false);
+  
+  // Sorting state
+  const [sortField, setSortField] = useState<'date' | 'amount'>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc'); // Default: latest first
+
+  // Sorting logic
+  const handleSort = (field: 'date' | 'amount') => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field with default direction
+      setSortField(field);
+      setSortDirection(field === 'date' ? 'desc' : 'desc'); // Both default to desc
+    }
+  };
+
+  // Sort transactions
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    let comparison = 0;
+    
+    if (sortField === 'date') {
+      comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+    } else if (sortField === 'amount') {
+      comparison = a.amount - b.amount;
+    }
+    
+    return sortDirection === 'asc' ? comparison : -comparison;
+  });
 
   // Pagination logic - only for non-compact mode
-  const totalPages = compact ? 1 : Math.ceil(transactions.length / itemsPerPage);
+  const totalPages = compact ? 1 : Math.ceil(sortedTransactions.length / itemsPerPage);
   const startIndex = compact ? 0 : (currentPage - 1) * itemsPerPage;
-  const endIndex = compact ? transactions.length : startIndex + itemsPerPage;
-  const paginatedTransactions = compact ? transactions : transactions.slice(startIndex, endIndex);
+  const endIndex = compact ? sortedTransactions.length : startIndex + itemsPerPage;
+  const paginatedTransactions = compact ? sortedTransactions : sortedTransactions.slice(startIndex, endIndex);
 
   // Reset to first page when transactions change
   useEffect(() => {
@@ -305,10 +334,30 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           <thead className="sticky top-0 bg-background z-10">
             <tr className="border-b border-border text-gray-400 text-xs">
               <th className="pb-2 font-normal w-20 text-center">Type</th>
-              <th className="pb-2 font-normal w-28">Date</th>
+              <th 
+                className="pb-2 font-normal w-28 cursor-pointer hover:text-white transition-colors"
+                onClick={() => handleSort('date')}
+              >
+                <div className="flex items-center gap-1">
+                  Date
+                  {sortField === 'date' && (
+                    sortDirection === 'desc' ? <ChevronDownIcon size={14} /> : <ChevronUpIcon size={14} />
+                  )}
+                </div>
+              </th>
               <th className="pb-2 font-normal w-40 text-center">Category</th>
               <th className="pb-2 font-normal">Description</th>
-              <th className="pb-2 font-normal text-right w-28">Amount</th>
+              <th 
+                className="pb-2 font-normal text-right w-28 cursor-pointer hover:text-white transition-colors"
+                onClick={() => handleSort('amount')}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  Amount
+                  {sortField === 'amount' && (
+                    sortDirection === 'desc' ? <ChevronDownIcon size={14} /> : <ChevronUpIcon size={14} />
+                  )}
+                </div>
+              </th>
               {!compact && <th className="pb-2 font-normal text-center w-20">Actions</th>}
             </tr>
           </thead>
