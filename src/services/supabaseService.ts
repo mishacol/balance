@@ -281,11 +281,40 @@ export class SupabaseService {
   }
 
   // Transaction methods
+  async getTransactions() {
+    try {
+      const userId = await this.getCurrentUserId();
+      if (!userId) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      
+      console.log('✅ [SUPABASE] Loaded transactions:', data?.length || 0);
+      return { data, error: null };
+    } catch (error) {
+      console.error('❌ [SUPABASE] Load transactions failed:', error);
+      return { data: null, error };
+    }
+  }
+
   async addTransaction(transaction: Omit<Transaction, 'id'>) {
     try {
       const userId = await this.getCurrentUserId();
       if (!userId) throw new Error('User not authenticated');
 
+      // 🚨 DEBUG: Log transaction before Supabase save
+      console.log(`💾 [SUPABASE] Adding transaction:`, {
+        originalTransaction: transaction,
+        dateString: transaction.date,
+        dateType: typeof transaction.date,
+        dateParse: new Date(transaction.date).toDateString(),
+      });
+      
       const transactionData: TransactionInsert = {
         user_id: userId,
         type: transaction.type,
@@ -295,6 +324,8 @@ export class SupabaseService {
         description: transaction.description,
         date: transaction.date,
       };
+      
+      console.log(`💾 [SUPABASE] Transaction data sent to DB:`, transactionData);
 
       const { data, error } = await supabase
         .from('transactions')
@@ -304,7 +335,10 @@ export class SupabaseService {
 
       if (error) throw error;
       
-      console.log('✅ [SUPABASE] Transaction added:', data.id);
+      // 🚨 DEBUG: Log what came back from Supabase
+      console.log('✅ [SUPABASE] Transaction added:', data);
+      console.log(`🔍 [SUPABASE] Returned date:`, data.date, typeof data.date, new Date(data.date).toDateString());
+      
       return { data, error: null };
     } catch (error) {
       console.error('❌ [SUPABASE] Add transaction failed:', error);
@@ -380,7 +414,13 @@ export class SupabaseService {
         date: row.date,
       }));
 
+      // 🚨 DEBUG: Check downloaded dates for corruption
       console.log(`✅ [SUPABASE] Loaded ${transactions.length} transactions`);
+      const suspiciousDates = transactions.filter(t => t.date.includes('2013-08-'));
+      if (suspiciousDates.length > 0) {
+        console.log(`🔍 [SUPABASE] August 2013 dates from DB:`, suspiciousDates.map(t => ({ id: t.id, date: t.date })));
+      }
+      
       return transactions;
     } catch (error) {
       console.error('❌ [SUPABASE] Get transactions failed:', error);

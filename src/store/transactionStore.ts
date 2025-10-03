@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { Transaction, FinancialSummary, CategoryTotal } from '../types';
 import { dataBackupService } from '../services/dataBackupService';
 import { supabaseService } from '../services/supabaseService';
@@ -37,15 +36,14 @@ interface TransactionStore {
 }
 
 export const useTransactionStore = create<TransactionStore>()(
-  persist(
-    (set, get) => ({
-      transactions: [],
-      backupMode: 'manual',
-      baseCurrency: 'EUR',
-      monthlyIncomeTarget: 0,
-      isUsingSupabase: false,
+  (set, get) => ({
+    transactions: [],
+    backupMode: 'manual',
+    baseCurrency: 'EUR',
+    monthlyIncomeTarget: 0,
+    isUsingSupabase: false,
 
-      addTransaction: async (transaction) => {
+    addTransaction: async (transaction) => {
         const state = get();
         
         if (state.isUsingSupabase) {
@@ -67,10 +65,21 @@ export const useTransactionStore = create<TransactionStore>()(
             }));
           }
         } else {
+          // 🚨 DEBUG: Log transaction before local storage save
+          console.log(`💾 [STORE] Adding transaction to localStorage:`, {
+            originalTransaction: transaction,
+            dateString: transaction.date,
+            dateType: typeof transaction.date,
+            dateParse: new Date(transaction.date).toDateString(),
+          });
+          
           const newTransaction: Transaction = {
             ...transaction,
             id: Date.now().toString(),
           };
+          
+          console.log(`💾 [STORE] Final transaction object:`, newTransaction);
+          
           set((state) => {
             const newTransactions = [...state.transactions, newTransaction];
             // Manual mode: NO automatic backups - user must create backups manually
@@ -339,7 +348,19 @@ export const useTransactionStore = create<TransactionStore>()(
       // Supabase methods
       loadTransactionsFromSupabase: async () => {
         try {
+          console.log(`🔄 [STORE] Loading transactions from Supabase...`);
           const transactions = await supabaseService.getAllTransactions();
+          
+          // 🚨 DEBUG: Check if dates are corrupted during reload
+          const prevTransactions = get().transactions;
+          const augustBeforeReload = prevTransactions.filter(t => t.date.includes('2013-08-'));
+          const augustAfterReload = transactions.filter(t => t.date.includes('2013-08-'));
+          
+          if (augustBeforeReload.length > 0 || augustAfterReload.length > 0) {
+            console.log(`🔍 [STORE] BEFORE RELOAD August 2013:`, augustBeforeReload.map(t => ({ id: t.id, date: t.date })));
+            console.log(`🔍 [STORE] AFTER RELOAD August 2013:`, augustAfterReload.map(t => ({ id: t.id, date: t.date })));
+          }
+          
           set({ transactions });
           console.log(`✅ [STORE] Loaded ${transactions.length} transactions from Supabase`);
         } catch (error) {
@@ -386,16 +407,5 @@ export const useTransactionStore = create<TransactionStore>()(
         set({ isUsingSupabase: true });
         console.log('🔄 [STORE] Switched to Supabase storage');
       },
-    }),
-    {
-      name: 'transaction-storage',
-      partialize: (state) => ({
-        transactions: state.transactions,
-        baseCurrency: state.baseCurrency,
-        monthlyIncomeTarget: state.monthlyIncomeTarget,
-        backupMode: state.backupMode,
-        isUsingSupabase: state.isUsingSupabase,
-      }),
-    }
-  )
+    })
 );

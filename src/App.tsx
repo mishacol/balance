@@ -4,6 +4,7 @@ import { AuthPage } from './components/Auth/AuthPage';
 import { useAuth } from './hooks/useAuth';
 import { useAutoBackup } from './hooks/useAutoBackup';
 import { useTransactionStore } from './store/transactionStore';
+import './utils/clearStorage'; // Auto-clear corrupted storage
 
 export function App() {
   const { loading, isAuthenticated } = useAuth();

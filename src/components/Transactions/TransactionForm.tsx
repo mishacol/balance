@@ -31,7 +31,13 @@ export const TransactionForm: React.FC = () => {
     resolver: zodResolver(transactionSchema),
     defaultValues: {
       type: 'income',
-      date: new Date().toISOString().split('T')[0],
+      date: (() => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      })(),
       currency: 'USD',
     },
   });
@@ -52,6 +58,14 @@ export const TransactionForm: React.FC = () => {
   }, [existingTransaction, reset]);
 
   const onSubmit = (data: TransactionFormData) => {
+    // 🚨 DEBUG: Log transaction data before saving
+    console.log(`💾 [FORM] Submitting transaction:`, {
+      originalData: data,
+      dateString: data.date,
+      dateType: typeof data.date,
+      dateParse: new Date(data.date).toDateString(),
+    });
+    
     if (isEditing && existingTransaction) {
       updateTransaction(existingTransaction.id, data);
     } else {
@@ -421,7 +435,13 @@ export const TransactionForm: React.FC = () => {
                   selected={field.value ? new Date(field.value) : new Date()}
                   onChange={(date) => {
                     if (date) {
-                      const formattedDate = date.toISOString().split('T')[0];
+                      // 🚨 FIX: Use local date formatting to avoid timezone conversion bugs
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, '0');
+                      const day = String(date.getDate()).padStart(2, '0');
+                      const formattedDate = `${year}-${month}-${day}`;
+                      
+                      console.log(`📅 [DATE] Selected: ${date.toDateString()}, Formatted: ${formattedDate}`);
                       field.onChange(formattedDate);
                     }
                   }}

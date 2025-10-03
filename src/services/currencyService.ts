@@ -171,10 +171,19 @@ class CurrencyService {
     }
 
     console.log(`💰 [CURRENCY] Converting: ${amount} ${fromCurrency} → ${toCurrency}`);
-    const rate = await this.getExchangeRate(fromCurrency, toCurrency);
-    const convertedAmount = amount * rate;
-    console.log(`✅ [CURRENCY] Converted: ${amount} ${fromCurrency} × ${rate} = ${convertedAmount} ${toCurrency}`);
-    return convertedAmount;
+    
+    try {
+      const rate = await this.getExchangeRate(fromCurrency, toCurrency);
+      const convertedAmount = amount * rate;
+      console.log(`✅ [CURRENCY] Converted: ${amount} ${fromCurrency} × ${rate} = ${convertedAmount} ${toCurrency}`);
+      return convertedAmount;
+    } catch (error) {
+      console.log(`⚠️ [CURRENCY] Conversion failed, using fallback rates`);
+      const fallbackRate = this.getFallbackRate(fromCurrency, toCurrency);
+      const convertedAmount = amount * fallbackRate;
+      console.log(`🔄 [CURRENCY] Fallback conversion: ${amount} ${fromCurrency} × ${fallbackRate} = ${convertedAmount} ${toCurrency}`);
+      return convertedAmount;
+    }
   }
 
   // Convert multiple amounts at once
@@ -183,13 +192,19 @@ class CurrencyService {
     toCurrency: string
   ): Promise<Array<{ amount: number; currency: string; convertedAmount: number }>> {
     console.log(`🔄 [CURRENCY] Converting ${amounts.length} amounts to ${toCurrency}`);
+    
     const conversions = await Promise.all(
-      amounts.map(async ({ amount, currency }) => ({
-        amount,
-        currency,
-        convertedAmount: await this.convertAmount(amount, currency, toCurrency),
-      }))
+      amounts.map(async ({ amount, currency }) => {
+        const convertedAmount = await this.convertAmount(amount, currency, toCurrency);
+        console.log(`✅ [CURRENCY] Converted: ${amount} ${currency} → ${convertedAmount} ${toCurrency}`);
+        return {
+          amount,
+          currency,
+          convertedAmount
+        };
+      })
     );
+    
     console.log(`✅ [CURRENCY] Completed conversion of ${amounts.length} amounts`);
     return conversions;
   }

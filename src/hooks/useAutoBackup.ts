@@ -13,17 +13,15 @@ export const useAutoBackup = () => {
       intervalRef.current = null;
     }
 
-    // Set up automatic backup if mode is 'automatic'
-    if (backupMode === 'automatic') {
-      console.log('🔄 Starting automatic backup timer (1 hour)');
-      
-      intervalRef.current = setInterval(() => {
-        console.log('⏰ Creating automatic backup...');
-        dataBackupService.createBackup(transactions);
-      }, 60 * 60 * 1000); // 1 hour in milliseconds
-    } else {
-      console.log('⏹️ Automatic backup disabled (manual mode)');
-      console.log('🔒 MANUAL MODE: All automatic backup creation is BLOCKED');
+    // 🚨 EMERGENCY: AUTOMATIC BACKUP COMPLETELY DISABLED
+    console.log('🚨 EMERGENCY: All automatic backups DISABLED due to data corruption');
+    console.log('🔒 NO AUTOMATIC BACKUPS WILL BE CREATED');
+    console.log('📝 Only manual backups are allowed via Backup Manager');
+    
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
 
     // Cleanup on unmount or mode change
