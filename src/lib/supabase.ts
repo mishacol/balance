@@ -20,6 +20,7 @@ export interface Database {
         Row: {
           id: string;
           email: string;
+          username: string | null;
           base_currency: string;
           monthly_income_target: number;
           backup_mode: 'manual' | 'automatic';
@@ -29,6 +30,7 @@ export interface Database {
         Insert: {
           id: string;
           email: string;
+          username?: string | null;
           base_currency?: string;
           monthly_income_target?: number;
           backup_mode?: 'manual' | 'automatic';
@@ -38,6 +40,7 @@ export interface Database {
         Update: {
           id?: string;
           email?: string;
+          username?: string | null;
           base_currency?: string;
           monthly_income_target?: number;
           backup_mode?: 'manual' | 'automatic';

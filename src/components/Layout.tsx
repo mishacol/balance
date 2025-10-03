@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { HomeIcon, PieChartIcon, ListIcon, PlusCircleIcon, SettingsIcon, ShieldIcon, HelpCircleIcon, LogInIcon } from 'lucide-react';
+import { HomeIcon, PieChartIcon, ListIcon, PlusCircleIcon, SettingsIcon, ShieldIcon, HelpCircleIcon, LogInIcon, UserIcon, LogOutIcon, CheckCircleIcon } from 'lucide-react';
 import { Logo } from './ui/Logo';
+import { useAuth } from '../hooks/useAuth';
+import { supabaseService } from '../services/supabaseService';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,6 +12,35 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, signOut, isAuthenticated } = useAuth();
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadUsername = async () => {
+      if (user && isAuthenticated) {
+        try {
+          const { data: profile } = await supabaseService.getUserProfile(user.id);
+          setUsername(profile?.username || user.email?.split('@')[0] || 'User');
+        } catch (error) {
+          console.error('Failed to load username:', error);
+          setUsername(user.email?.split('@')[0] || 'User');
+        }
+      } else {
+        setUsername(null);
+      }
+    };
+
+    loadUsername();
+  }, [user, isAuthenticated]);
+  
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Sign out failed:', error);
+    }
+  };
   
   const navItems = [
     { path: '/', icon: <HomeIcon size={20} />, label: 'Dashboard' },
@@ -17,9 +48,31 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: '/analytics', icon: <PieChartIcon size={20} />, label: 'Analytics' },
     { path: '/backup', icon: <ShieldIcon size={20} />, label: 'Backup' },
     { path: '/settings', icon: <SettingsIcon size={20} />, label: 'Settings' },
-    { path: '/faq', icon: <HelpCircleIcon size={20} />, label: 'FAQ' },
-    { path: '/auth', icon: <LogInIcon size={20} />, label: 'Sign In' }
+    { path: '/faq', icon: <HelpCircleIcon size={20} />, label: 'FAQ' }
   ];
+
+  const authItem = isAuthenticated 
+    ? { 
+        action: handleSignOut, 
+        icon: <LogOutIcon size={20} />, 
+        label: 'Sign Out',
+        className: 'text-red-400 hover:text-red-300'
+      }
+    : { 
+        path: '/auth', 
+        icon: <LogInIcon size={20} />, 
+        label: 'Sign In',
+        className: ''
+      };
+
+  const profileItem = isAuthenticated 
+    ? { 
+        path: '/profile', 
+        icon: <UserIcon size={20} />, 
+        label: 'Profile',
+        className: ''
+      }
+    : null;
 
   return (
     <div className="flex h-screen bg-background text-white">
@@ -32,7 +85,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </span>
           <span className="md:hidden text-highlight text-xl font-bold">bal</span>
         </div>
-        <nav className="mt-8">
+
+        {/* User Status */}
+        {isAuthenticated && username && (
+          <div className="px-4 pb-4">
+            <div className="bg-highlight/10 border border-highlight/20 rounded-lg p-3 flex items-center space-x-2">
+              <CheckCircleIcon size={14} className="text-green-400 flex-shrink-0" />
+              <span className="text-xs text-gray-400">Signed in as</span>
+              <span className="text-sm font-medium text-white">@{username}</span>
+            </div>
+          </div>
+        )}
+        <nav className={isAuthenticated && username ? "mt-4" : "mt-8"}>
           <ul>
             {navItems.map(item => (
               <li key={item.path} className="mb-2">
@@ -47,6 +111,44 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </Link>
               </li>
             ))}
+            
+            {/* Profile link (only when authenticated) */}
+            {profileItem && (
+              <li className="mb-2">
+                <Link 
+                  to={profileItem.path} 
+                  className={`flex items-center p-3 md:px-4 hover:bg-border rounded-md transition-colors ${
+                    location.pathname === profileItem.path ? 'bg-border text-highlight' : 'text-gray-400'
+                  }`}
+                >
+                  <span className="mr-3">{profileItem.icon}</span>
+                  <span className="hidden md:inline-block">{profileItem.label}</span>
+                </Link>
+              </li>
+            )}
+            
+            {/* Auth action (Sign In/Out) */}
+            <li className="mb-2">
+              {authItem.action ? (
+                <button
+                  onClick={authItem.action}
+                  className={`flex items-center p-3 md:px-4 hover:bg-border rounded-md transition-colors w-full text-left ${authItem.className || 'text-gray-400'}`}
+                >
+                  <span className="mr-3">{authItem.icon}</span>
+                  <span className="hidden md:inline-block">{authItem.label}</span>
+                </button>
+              ) : (
+                <Link 
+                  to={authItem.path!} 
+                  className={`flex items-center p-3 md:px-4 hover:bg-border rounded-md transition-colors ${
+                    location.pathname === authItem.path ? 'bg-border text-highlight' : 'text-gray-400'
+                  }`}
+                >
+                  <span className="mr-3">{authItem.icon}</span>
+                  <span className="hidden md:inline-block">{authItem.label}</span>
+                </Link>
+              )}
+            </li>
           </ul>
         </nav>
       </aside>

@@ -7,7 +7,7 @@ import { TransactionsPage } from './components/Transactions/TransactionsPage';
 import { TransactionForm } from './components/Transactions/TransactionForm';
 import { BackupPage } from './components/Backup/BackupPage';
 import { SettingsPage } from './components/Settings/SettingsPage';
-import { AuthPage } from './components/Auth/AuthPage';
+import { ProfilePage } from './components/Profile/ProfilePage';
 export function AppRouter() {
   return <BrowserRouter>
       <Routes>
@@ -49,7 +49,9 @@ export function AppRouter() {
                 </p>
               </div>
             </Layout>} />
-        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/profile" element={<Layout>
+              <ProfilePage />
+            </Layout>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>;

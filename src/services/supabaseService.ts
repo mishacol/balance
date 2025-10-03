@@ -19,18 +19,24 @@ export class SupabaseService {
   }
 
   // Authentication methods
-  async signUp(email: string, password: string) {
+  async signUp(email: string, password: string, username?: string) {
     try {
+      const metadata: Record<string, any> = {};
+      if (username) metadata.username = username;
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: metadata
+        }
       });
       
       if (error) throw error;
       
       // Create user profile
       if (data.user) {
-        await this.createUserProfile(data.user.id, email);
+        await this.createUserProfile(data.user.id, email, username);
       }
       
       return { data, error: null };
@@ -40,8 +46,28 @@ export class SupabaseService {
     }
   }
 
-  async signIn(email: string, password: string) {
+  async signIn(emailOrUsername: string, password: string) {
     try {
+      // Check if it's an email or username
+      const isEmail = emailOrUsername.includes('@');
+      
+      let email = emailOrUsername;
+      
+      if (!isEmail) {
+        // It's a username, resolve it to email
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', emailOrUsername)
+          .single();
+        
+        if (profileError || !profile) {
+          return { data: null, error: { message: 'Invalid username or password' } };
+        }
+        
+        email = profile.email;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -51,6 +77,37 @@ export class SupabaseService {
       return { data, error: null };
     } catch (error) {
       console.error('❌ [SUPABASE] Sign in failed:', error);
+      return { data: null, error };
+    }
+  }
+
+  async signInWithGoogle() {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('❌ [SUPABASE] Google sign in failed:', error);
+      return { data: null, error };
+    }
+  }
+
+  async resetPassword(email: string) {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`
+      });
+
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      console.error('❌ [SUPABASE] Password reset failed:', error);
       return { data: null, error };
     }
   }
@@ -78,11 +135,12 @@ export class SupabaseService {
   }
 
   // Profile methods
-  async createUserProfile(userId: string, email: string) {
+  async createUserProfile(userId: string, email: string, username?: string) {
     try {
       const profile: ProfileInsert = {
         id: userId,
         email,
+        username: username || null,
         base_currency: 'EUR',
         monthly_income_target: 0,
         backup_mode: 'automatic',
