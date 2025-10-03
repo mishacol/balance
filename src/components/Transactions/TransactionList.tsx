@@ -85,6 +85,13 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     calculateConvertedTotal();
   }, [transactions, baseCurrency]);
 
+  // DEBUG: Log currency conversion info
+  React.useEffect(() => {
+    console.log(`🔍 [TRANSACTION LIST] Base currency: ${baseCurrency}`);
+    console.log(`🔍 [TRANSACTION LIST] Converted total: ${convertedTotal}`);
+    console.log(`🔍 [TRANSACTION LIST] Sample transactions:`, transactions.slice(0, 3).map(t => ({ amount: t.amount, currency: t.currency })));
+  }, [transactions, baseCurrency, convertedTotal]);
+
   const handleEdit = (transaction: Transaction) => {
     navigate(`/edit-transaction/${transaction.id}`);
   };

@@ -56,9 +56,14 @@ export const DashboardPage: React.FC = () => {
           return transactionYear === currentYear;
         case 'custom':
           if (customStartDate && customEndDate) {
-            return transactionDate >= customStartDate && transactionDate <= customEndDate;
+            // Normalize dates to only compare date parts (remove time components)
+            const transactionDateOnly = new Date(transactionDate.getFullYear(), transactionDate.getMonth(), transactionDate.getDate());
+            const startDateOnly = new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate());
+            const endDateOnly = new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate());
+            
+            return transactionDateOnly >= startDateOnly && transactionDateOnly <= endDateOnly;
           }
-          return true;
+          return false; // Don't show any transactions if custom range not properly set
         default:
           return true;
       }
@@ -66,35 +71,44 @@ export const DashboardPage: React.FC = () => {
   }, [transactions, selectedTimeRange, customStartDate, customEndDate]);
 
   // Filter transactions for cumulative calculations (Investments & Balance cards)
+  // CRITICAL FIX: For custom dates, only include transactions up to the selected end date
   const cumulativeTransactions = useMemo(() => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    
     let cutoffDate: Date;
+    
     switch (selectedTimeRange) {
       case 'this-month':
-        cutoffDate = new Date(currentYear, currentMonth + 1, 0); // End of current month
+        const now = new Date();
+        cutoffDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // End of current month
         break;
       case 'last-month':
-        const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-        const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+        const now2 = new Date();
+        const lastMonth = now2.getMonth() === 0 ? 11 : now2.getMonth() - 1;
+        const lastMonthYear = now2.getMonth() === 0 ? now2.getFullYear() - 1 : now2.getFullYear();
         cutoffDate = new Date(lastMonthYear, lastMonth + 1, 0); // End of last month
         break;
       case 'this-year':
-        cutoffDate = new Date(currentYear, 11, 31); // End of current year
+        const now3 = new Date();
+        cutoffDate = new Date(now3.getFullYear(), 11, 31); // End of current year
         break;
       case 'custom':
-        cutoffDate = customEndDate || new Date();
+        // CRITICAL: For custom ranges, only include up to custom end date
+        cutoffDate = customEndDate || new Date('1900-01-01'); // Show no transactions if no custom date
         break;
       default:
         cutoffDate = new Date();
     }
     
-    return transactions.filter(transaction => {
+    console.log(`📊 [CUMULATIVE] Selected range: ${selectedTimeRange}, Cutoff date: ${cutoffDate.toISOString().split('T')[0]}`);
+    
+    const cumulativeFilteredTransactions = transactions.filter(transaction => {
       const transactionDate = new Date(transaction.date);
       return transactionDate <= cutoffDate;
     });
+    
+    console.log(`📊 [CUMULATIVE] Filtered ${transactions.length} → ${cumulativeFilteredTransactions.length} transactions`);
+    console.log(`📊 [CUMULATIVE] Transaction date range: ${cumulativeFilteredTransactions.length > 0 ? `${Math.min(...cumulativeFilteredTransactions.map(t => t.date))} to ${Math.max(...cumulativeFilteredTransactions.map(t => t.date))}` : 'No transactions'}`);
+    
+    return cumulativeFilteredTransactions;
   }, [transactions, selectedTimeRange, customEndDate]);
   
   // Calculate summary based on filtered transactions using proper accounting logic
@@ -102,25 +116,32 @@ export const DashboardPage: React.FC = () => {
     console.log(`📊 [DASHBOARD] Period transactions: ${filteredTransactions.length}, Cumulative transactions: ${cumulativeTransactions.length}`);
     console.log(`📊 [DASHBOARD] Base currency: ${baseCurrency}`);
     
-    // For the selected period (Income, Expenses, Monthly Available)
-    const totalIncome = filteredTransactions
+    // ===== PERIOD CALCULATIONS (Income, Expenses) =====
+    // 1. Calculate in original currencies first
+    const periodIncome = filteredTransactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const totalExpenses = filteredTransactions
+    const periodExpenses = filteredTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalInvestments = filteredTransactions
+    
+    console.log(`📊 [PERIOD] Income: ${periodIncome}, Expenses: ${periodExpenses}`);
+    console.log(`📊 [PERIOD] Selected range: ${selectedTimeRange}, Start: ${customStartDate?.toISOString()}, End: ${customEndDate?.toISOString()}`);
+    console.log(`📊 [PERIOD] Filtered transactions:`, filteredTransactions.map(t => ({ date: t.date, type: t.type, amount: t.amount, currency: t.currency })));
+    
+    // ===== CUMULATIVE CALCULATIONS (Investments, Cash, Total Wealth) =====
+    // 2. Calculate cumulative investments (ALL investments up to end date)
+    const cumulativeInvestments = cumulativeTransactions
       .filter(t => t.type === 'investment')
       .reduce((sum, t) => sum + t.amount, 0);
-
-    // Monthly available balance = income - expenses - investments (for the selected period)
-    const monthlyAvailable = totalIncome - totalExpenses - totalInvestments;
     
-    console.log(`📊 [DASHBOARD] Period amounts - Income: ${totalIncome}, Expenses: ${totalExpenses}, Investments: ${totalInvestments}, Monthly Available: ${monthlyAvailable}`);
+    console.log(`📊 [CUMULATIVE] Total Investments up to end date: ${cumulativeInvestments}`);
     
-    // For cumulative calculations, group all transactions by month and calculate running totals
+    // 3. Calculate cumulative cash using correct formula:
+    // Cash = Cumulative Cash + Current Period Income - Current Period Expenses - Cumulative Investments
+    
+    // First, group cumulative transactions by month to calculate running cash balance
     const monthlyData = new Map<string, { income: number; expenses: number; investments: number }>();
     
     cumulativeTransactions.forEach((transaction) => {
@@ -144,31 +165,61 @@ export const DashboardPage: React.FC = () => {
     // Sort months chronologically
     const sortedMonths = Array.from(monthlyData.entries()).sort(([a], [b]) => a.localeCompare(b));
 
-    // Calculate cumulative values
-    let cumulativeAvailable = 0;
-    let cumulativeInvestments = 0;
-
-    sortedMonths.forEach(([, data]) => {
-      const monthlyAvailableForMonth = data.income - data.expenses - data.investments;
-      cumulativeAvailable += monthlyAvailableForMonth;
-      cumulativeInvestments += data.investments;
-    });
-
-    // Net balance = cumulative available + cumulative investments
-    const netBalance = cumulativeAvailable + cumulativeInvestments;
+    // Calculate cumulative cash balance FROM PREVIOUS PERIODS ONLY
+    // For April 2013 (first period), this should be 0
+    let cumulativeCashFromPreviousPeriods = 0;
     
-    console.log(`📊 [DASHBOARD] Final summary - Income: ${totalIncome}, Expenses: ${totalExpenses}, Investments: ${totalInvestments}, Monthly Available: ${monthlyAvailable}, Cumulative Available: ${cumulativeAvailable}, Cumulative Investments: ${cumulativeInvestments}, Net Balance: ${netBalance}`);
-
-    return { 
-      totalIncome, 
-      totalExpenses, 
-      totalInvestments, 
-      monthlyAvailable,
-      cumulativeAvailable,
-      cumulativeInvestments,
-      netBalance 
+    // Get the start date of the selected period
+    let periodStartDate: Date;
+    switch (selectedTimeRange) {
+      case 'custom':
+        periodStartDate = customStartDate || new Date();
+        break;
+      default:
+        periodStartDate = new Date(); // Fallback
+    }
+    
+    sortedMonths.forEach(([month, data]) => {
+      const monthDate = new Date(month + '-01');
+      // Only include months BEFORE the selected period
+      if (monthDate < periodStartDate) {
+        const monthlyAvailableForMonth = data.income - data.expenses;
+        cumulativeCashFromPreviousPeriods += monthlyAvailableForMonth;
+      }
+    });
+    
+    // Apply correct Cash formula: Previous Cumulative Cash + Current Period Income - Current Period Expenses - Cumulative Investments
+    const finalCash = cumulativeCashFromPreviousPeriods + periodIncome - periodExpenses - cumulativeInvestments;
+    
+    // Total Wealth = Cash + Total Cumulative Investments
+    const totalWealth = finalCash + cumulativeInvestments;
+    
+    console.log(`📊 [CALCULATION] Previous Cumulative Cash: ${cumulativeCashFromPreviousPeriods}, Final Cash: ${finalCash}, Total Wealth: ${totalWealth}`);
+    
+    // Return the calculated values
+    const summary = {
+      totalIncome: periodIncome,
+      totalExpenses: periodExpenses,
+      totalInvestments: cumulativeInvestments, // Show cumulative investments on dashboard
+      monthlyAvailable: periodIncome - periodExpenses, // For compatibility, but not used in cards
+      cumulativeAvailable: finalCash, // This is actually the final cash value
+      cumulativeInvestments: cumulativeInvestments,
+      netBalance: totalWealth // Renamed from netBalance to totalWealth for clarity
     };
-  }, [filteredTransactions, cumulativeTransactions, selectedTimeRange, customEndDate, baseCurrency]);
+    
+    console.log(`📊 [DASHBOARD] Final summary:`, summary);
+    console.log(`🔍 [DEBUG] Calculation breakdown:`, {
+      periodIncome,
+      periodExpenses,
+      cumulativeCashFromPreviousPeriods,
+      finalCash,
+      cumulativeInvestments,
+      totalWealth,
+      sortedMonths: sortedMonths.map(([month, data]) => ({ month, ...data }))
+    });
+    
+    return summary;
+  }, [filteredTransactions, cumulativeTransactions, selectedTimeRange, customStartDate, customEndDate, baseCurrency]);
   
   // Update summary when transactions or base currency changes - WITH ASYNC CURRENCY CONVERSION
   useEffect(() => {
@@ -185,8 +236,14 @@ export const DashboardPage: React.FC = () => {
         const needsConversion = filteredTransactions.some(t => t.currency !== baseCurrency) || 
                                cumulativeTransactions.some(t => t.currency !== baseCurrency);
         
+        console.log(`🔍 [CURRENCY DEBUG] Base currency: ${baseCurrency}`);
+        console.log(`🔍 [CURRENCY DEBUG] Filtered transactions currencies:`, filteredTransactions.map(t => t.currency));
+        console.log(`🔍 [CURRENCY DEBUG] Cumulative transactions currencies:`, cumulativeTransactions.map(t => t.currency));
+        console.log(`🔍 [CURRENCY DEBUG] Needs conversion: ${needsConversion}`);
+        
         if (!needsConversion) {
-          console.log(`✅ [DASHBOARD] No conversion needed - all transactions in ${baseCurrency}`);
+          console.log(`⚠️ [DASHBOARD] NO CONVERSION NEEDED - all transactions in ${baseCurrency}`);
+          console.log(`⚠️ [DASHBOARD] Using base summary (NO CURRENCY CONVERSION):`, baseSummary);
           setSummary(baseSummary);
           return;
         }
@@ -199,7 +256,9 @@ export const DashboardPage: React.FC = () => {
           currency: t.currency
         }));
         
+        console.log(`🔍 [CONVERSION DEBUG] Period transactions to convert:`, periodAmountsToConvert);
         const convertedPeriodAmounts = await currencyService.convertAmounts(periodAmountsToConvert, baseCurrency);
+        console.log(`🔍 [CONVERSION DEBUG] Period amounts after conversion:`, convertedPeriodAmounts);
         
         // Convert cumulative transactions (for Investments/Balance)
         const cumulativeAmountsToConvert = cumulativeTransactions.map(t => ({
@@ -207,7 +266,9 @@ export const DashboardPage: React.FC = () => {
           currency: t.currency
         }));
         
+        console.log(`🔍 [CONVERSION DEBUG] Cumulative transactions to convert:`, cumulativeAmountsToConvert);
         const convertedCumulativeAmounts = await currencyService.convertAmounts(cumulativeAmountsToConvert, baseCurrency);
+        console.log(`🔍 [CONVERSION DEBUG] Cumulative amounts after conversion:`, convertedCumulativeAmounts);
         
         console.log(`✅ [DASHBOARD] Conversion completed`);
         
@@ -280,10 +341,25 @@ export const DashboardPage: React.FC = () => {
         };
         
         console.log(`✅ [DASHBOARD] Final converted summary:`, convertedSummary);
+        console.log(`🔍 [DEBUG] July vs August check - Selected range: ${selectedTimeRange}, Cutoff: ${customEndDate?.toISOString().split('T')[0]}, Cumulative Available: ${convertedCumulativeAvailable}`);
+        console.log(`🔍 [DEBUG] Currency breakdown:`, {
+          rawCumulativeAvailable: baseSummary.cumulativeAvailable,
+          convertedCumulativeAvailable: convertedCumulativeAvailable,
+          conversionDifference: convertedCumulativeAvailable - baseSummary.cumulativeAvailable,
+          filteredCount: filteredTransactions.length,
+          cumulativeCount: cumulativeTransactions.length
+        });
         setSummary(convertedSummary);
         
       } catch (error) {
         console.error(`❌ [DASHBOARD] Currency conversion failed:`, error);
+        console.error(`❌ [ERROR DETAILS]:`, {
+          errorMessage: error.message,
+          errorStack: error.stack,
+          baseCurrency,
+          filteredTransactionsLength: filteredTransactions.length,
+          cumulativeTransactionsLength: cumulativeTransactions.length
+        });
         // Fallback to base summary
         const fallbackSummary = getFilteredSummary;
         console.log(`🔄 [DASHBOARD] Using fallback summary:`, fallbackSummary);
@@ -429,12 +505,56 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <SummaryCard title="Income" amount={summary.totalIncome} type="income" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
-        <SummaryCard title="Expenses" amount={summary.totalExpenses} type="expense" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
-        <SummaryCard title="Investments" amount={summary.cumulativeInvestments} type="investment" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
-        <SummaryCard title="Available Balance" amount={summary.cumulativeAvailable} type="balance" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
-        <SummaryCard title="Net Balance" amount={summary.netBalance} type="net-balance" currency={baseCurrency} date={getPeriodName()} isLoading={isConvertingCurrency} />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        <SummaryCard 
+          title="Income" 
+          amount={summary.totalIncome} 
+          type="income" 
+          currency={baseCurrency} 
+          date={getPeriodName()} 
+          explanation="Earned this period"
+          isLoading={isConvertingCurrency} 
+        />
+        
+        <SummaryCard 
+          title="Expenses" 
+          amount={summary.totalExpenses} 
+          type="expense" 
+          currency={baseCurrency} 
+          date={getPeriodName()} 
+          explanation="Spent this period"
+          isLoading={isConvertingCurrency} 
+        />
+        
+        <SummaryCard 
+          title="Investments" 
+          amount={summary.cumulativeInvestments} 
+          type="investment" 
+          currency={baseCurrency} 
+          date={getPeriodName()} 
+          explanation="Total investments"
+          isLoading={isConvertingCurrency} 
+        />
+        
+        <SummaryCard 
+          title="Cash" 
+          amount={summary.cumulativeAvailable} 
+          type="balance" 
+          currency={baseCurrency} 
+          date={getPeriodName()} 
+          explanation="Available money"
+          isLoading={isConvertingCurrency} 
+        />
+        
+        <SummaryCard 
+          title="Total Wealth" 
+          amount={summary.netBalance} 
+          type="net-balance" 
+          currency={baseCurrency} 
+          date={getPeriodName()} 
+          explanation="Net worth"
+          isLoading={isConvertingCurrency} 
+        />
       </div>
 
       {/* Monthly Income Target Card */}

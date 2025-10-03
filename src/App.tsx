@@ -16,6 +16,8 @@ export function App() {
   React.useEffect(() => {
     if (isAuthenticated && !loading) {
       console.log('🔐 Authenticated - Switching to Supabase');
+      
+      // First, switch to Supabase flag
       switchToSupabase();
       
       // Load user data from Supabase
@@ -23,7 +25,7 @@ export function App() {
         console.error('Failed to load transactions from Supabase:', error);
       });
       
-      // Migrate localStorage data to Supabase
+      // Only migrate if this is the first time (localStorage will be cleared after migration)
       migrateFromLocalStorage().catch(error => {
         console.error('Migration failed:', error);
       });

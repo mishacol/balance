@@ -9,6 +9,7 @@ interface SummaryCardProps {
   type?: 'income' | 'expense' | 'balance' | 'investment' | 'net-balance';
   percentage?: number;
   date?: string;
+  explanation?: string;
   isLoading?: boolean;
 }
 export const SummaryCard: React.FC<SummaryCardProps> = ({
@@ -18,6 +19,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   type = 'balance',
   percentage,
   date,
+  explanation,
   isLoading = false
 }) => {
   const getColor = () => {
@@ -38,7 +40,8 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   };
   return <Card className="h-full">
       <div className="flex flex-col h-full">
-        <h3 className="text-gray-400 text-xs">{title}</h3>
+        <h3 className="text-gray-400 text-xs font-medium">{title}</h3>
+        {explanation && <p className="text-gray-600 text-xs mt-0.5 leading-tight whitespace-nowrap">{explanation}</p>}
         {date && <p className="text-gray-500 text-xs mt-1">{date}</p>}
         <div className="mt-2 flex-grow">
           <div className={`text-lg font-mono font-medium ${getColor()} ${isLoading ? 'opacity-50' : ''}`}>

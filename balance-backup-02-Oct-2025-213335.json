@@ -1,0 +1,2806 @@
+{
+  "transactions": [
+    {
+      "type": "income",
+      "amount": 7559,
+      "currency": "MDL",
+      "category": "other",
+      "description": "savings",
+      "date": "2013-04-01",
+      "id": "1759240376401"
+    },
+    {
+      "type": "income",
+      "amount": 5604,
+      "currency": "MDL",
+      "category": "other",
+      "description": "Transfer from Italy",
+      "date": "2013-04-23",
+      "id": "1759240754126"
+    },
+    {
+      "type": "income",
+      "amount": 11242,
+      "currency": "MDL",
+      "category": "other",
+      "description": "Transfer from Italy",
+      "date": "2013-04-09",
+      "id": "1759240932399"
+    },
+    {
+      "type": "expense",
+      "amount": 6,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-05",
+      "id": "1759242079932"
+    },
+    {
+      "type": "expense",
+      "amount": 56,
+      "currency": "MDL",
+      "category": "interurban-travel",
+      "description": "",
+      "date": "2013-04-01",
+      "id": "1759242128112"
+    },
+    {
+      "type": "expense",
+      "amount": 4,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-02",
+      "id": "1759242297453"
+    },
+    {
+      "type": "expense",
+      "amount": 6,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-06",
+      "id": "1759242674627"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "charity",
+      "description": "",
+      "date": "2013-04-04",
+      "id": "1759243075776"
+    },
+    {
+      "type": "expense",
+      "amount": 700,
+      "currency": "MDL",
+      "category": "restaurants",
+      "description": "",
+      "date": "2013-04-07",
+      "id": "1759243119922"
+    },
+    {
+      "type": "expense",
+      "amount": 25,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-09",
+      "id": "1759243396972"
+    },
+    {
+      "type": "expense",
+      "amount": 70,
+      "currency": "MDL",
+      "category": "clothing",
+      "description": "",
+      "date": "2013-04-11",
+      "id": "1759243514351"
+    },
+    {
+      "type": "expense",
+      "amount": 2469,
+      "currency": "MDL",
+      "category": "vacation-travel",
+      "description": "trip to italy",
+      "date": "2013-04-12",
+      "id": "1759243552592"
+    },
+    {
+      "type": "expense",
+      "amount": 12,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-13",
+      "id": "1759243573361"
+    },
+    {
+      "type": "expense",
+      "amount": 150,
+      "currency": "MDL",
+      "category": "hospital-emergency",
+      "description": "",
+      "date": "2013-04-21",
+      "id": "1759243616107"
+    },
+    {
+      "type": "expense",
+      "amount": 8,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-15",
+      "id": "1759244428198"
+    },
+    {
+      "type": "expense",
+      "amount": 6,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-16",
+      "id": "1759244442919"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "fast-food",
+      "description": "",
+      "date": "2013-04-17",
+      "id": "1759244468504"
+    },
+    {
+      "type": "expense",
+      "amount": 8,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-18",
+      "id": "1759244606581"
+    },
+    {
+      "type": "expense",
+      "amount": 12,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-19",
+      "id": "1759244623854"
+    },
+    {
+      "type": "expense",
+      "amount": 6,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-21",
+      "id": "1759244644918"
+    },
+    {
+      "type": "expense",
+      "amount": 4,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-22",
+      "id": "1759244672431"
+    },
+    {
+      "type": "expense",
+      "amount": 6,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-23",
+      "id": "1759244727545"
+    },
+    {
+      "type": "expense",
+      "amount": 29,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-24",
+      "id": "1759244749497"
+    },
+    {
+      "type": "expense",
+      "amount": 52,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-25",
+      "id": "1759244779402"
+    },
+    {
+      "type": "expense",
+      "amount": 4,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-05-04",
+      "id": "1759244798243"
+    },
+    {
+      "type": "expense",
+      "amount": 14,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-27",
+      "id": "1759244812588"
+    },
+    {
+      "type": "expense",
+      "amount": 150,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave sasha for hospital",
+      "date": "2013-04-28",
+      "id": "1759244847253"
+    },
+    {
+      "type": "expense",
+      "amount": 6,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-30",
+      "id": "1759244870221"
+    },
+    {
+      "type": "expense",
+      "amount": 4,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-29",
+      "id": "1759244876486"
+    },
+    {
+      "type": "expense",
+      "amount": 27,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-04",
+      "id": "1759244946685"
+    },
+    {
+      "type": "expense",
+      "amount": 100,
+      "currency": "MDL",
+      "category": "alcohol-beverages",
+      "description": "",
+      "date": "2013-04-06",
+      "id": "1759245115774"
+    },
+    {
+      "type": "expense",
+      "amount": 121,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-28",
+      "id": "1759245384360"
+    },
+    {
+      "type": "expense",
+      "amount": 173,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-02",
+      "id": "1759245467330"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-05",
+      "id": "1759245517532"
+    },
+    {
+      "type": "expense",
+      "amount": 34,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-03",
+      "id": "1759245553781"
+    },
+    {
+      "type": "expense",
+      "amount": 50,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-04-07",
+      "id": "1759245601471"
+    },
+    {
+      "type": "expense",
+      "amount": 17,
+      "currency": "MDL",
+      "category": "phone",
+      "description": "landline",
+      "date": "2013-04-09",
+      "id": "1759245712130"
+    },
+    {
+      "type": "expense",
+      "amount": 49,
+      "currency": "MDL",
+      "category": "furniture-appliances",
+      "description": "",
+      "date": "2013-04-28",
+      "id": "1759245743395"
+    },
+    {
+      "type": "expense",
+      "amount": 244,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-11",
+      "id": "1759245860903"
+    },
+    {
+      "type": "expense",
+      "amount": 18,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-12",
+      "id": "1759245895433"
+    },
+    {
+      "type": "expense",
+      "amount": 15,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-13",
+      "id": "1759245908177"
+    },
+    {
+      "type": "expense",
+      "amount": 28,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-14",
+      "id": "1759245923978"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-15",
+      "id": "1759245941634"
+    },
+    {
+      "type": "expense",
+      "amount": 12,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-16",
+      "id": "1759245982292"
+    },
+    {
+      "type": "expense",
+      "amount": 19,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-18",
+      "id": "1759245995660"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-20",
+      "id": "1759246014341"
+    },
+    {
+      "type": "expense",
+      "amount": 40,
+      "currency": "MDL",
+      "category": "pharmacy",
+      "description": "",
+      "date": "2013-04-15",
+      "id": "1759246035413"
+    },
+    {
+      "type": "expense",
+      "amount": 12,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-22",
+      "id": "1759246054414"
+    },
+    {
+      "type": "expense",
+      "amount": 195,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-23",
+      "id": "1759246073038"
+    },
+    {
+      "type": "expense",
+      "amount": 162,
+      "currency": "MDL",
+      "category": "household-goods",
+      "description": "",
+      "date": "2013-04-25",
+      "id": "1759246089551"
+    },
+    {
+      "type": "expense",
+      "amount": 749,
+      "currency": "MDL",
+      "category": "furniture-appliances",
+      "description": "",
+      "date": "2013-04-01",
+      "id": "1759246104248"
+    },
+    {
+      "type": "expense",
+      "amount": 120,
+      "currency": "MDL",
+      "category": "sports-recreation",
+      "description": "",
+      "date": "2013-04-24",
+      "id": "1759248453972"
+    },
+    {
+      "type": "expense",
+      "amount": 400,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave sasha for school",
+      "date": "2013-04-02",
+      "id": "1759248492400"
+    },
+    {
+      "type": "expense",
+      "amount": 130,
+      "currency": "MDL",
+      "category": "cleaning-products",
+      "description": "",
+      "date": "2013-04-25",
+      "id": "1759249946116"
+    },
+    {
+      "type": "expense",
+      "amount": 50,
+      "currency": "MDL",
+      "category": "phone",
+      "description": "",
+      "date": "2013-04-05",
+      "id": "1759250613197"
+    },
+    {
+      "type": "expense",
+      "amount": 13,
+      "currency": "MDL",
+      "category": "cleaning-products",
+      "description": "",
+      "date": "2013-04-04",
+      "id": "1759250625162"
+    },
+    {
+      "type": "expense",
+      "amount": 25,
+      "currency": "MDL",
+      "category": "restaurants",
+      "description": "",
+      "date": "2013-04-13",
+      "id": "1759250688546"
+    },
+    {
+      "type": "expense",
+      "amount": 166,
+      "currency": "MDL",
+      "category": "internet",
+      "description": "",
+      "date": "2013-04-04",
+      "id": "1759251691722"
+    },
+    {
+      "type": "expense",
+      "amount": 129,
+      "currency": "MDL",
+      "category": "other",
+      "description": "housing association",
+      "date": "2013-04-23",
+      "id": "1759251739367"
+    },
+    {
+      "type": "expense",
+      "amount": 45,
+      "currency": "MDL",
+      "category": "gas",
+      "description": "",
+      "date": "2013-04-23",
+      "id": "1759251886972"
+    },
+    {
+      "type": "expense",
+      "amount": 1236,
+      "currency": "MDL",
+      "category": "heating",
+      "description": "",
+      "date": "2013-04-09",
+      "id": "1759251926903"
+    },
+    {
+      "type": "expense",
+      "amount": 96,
+      "currency": "MDL",
+      "category": "electricity",
+      "description": "",
+      "date": "2013-04-23",
+      "id": "1759252007130"
+    },
+    {
+      "type": "expense",
+      "amount": 129,
+      "currency": "MDL",
+      "category": "water-sewer",
+      "description": "",
+      "date": "2013-04-23",
+      "id": "1759252080929"
+    },
+    {
+      "type": "expense",
+      "amount": 80,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-27",
+      "id": "1759252151352"
+    },
+    {
+      "type": "expense",
+      "amount": 24,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-11",
+      "id": "1759252245227"
+    },
+    {
+      "type": "expense",
+      "amount": 100,
+      "currency": "MDL",
+      "category": "movies",
+      "description": "",
+      "date": "2013-04-19",
+      "id": "1759252311955"
+    },
+    {
+      "type": "expense",
+      "amount": 45,
+      "currency": "MDL",
+      "category": "haircuts-salon",
+      "description": "",
+      "date": "2013-04-10",
+      "id": "1759252389964"
+    },
+    {
+      "type": "expense",
+      "amount": 50,
+      "currency": "MDL",
+      "category": "furniture-appliances",
+      "description": "",
+      "date": "2013-04-10",
+      "id": "1759252529965"
+    },
+    {
+      "type": "expense",
+      "amount": 6120,
+      "currency": "MDL",
+      "category": "furniture-appliances",
+      "description": "",
+      "date": "2013-04-10",
+      "id": "1759252590451"
+    },
+    {
+      "type": "expense",
+      "amount": 3590,
+      "currency": "MDL",
+      "category": "furniture-appliances",
+      "description": "",
+      "date": "2013-04-24",
+      "id": "1759252621107"
+    },
+    {
+      "type": "expense",
+      "amount": 75,
+      "currency": "MDL",
+      "category": "kitchen-utensils",
+      "description": "",
+      "date": "2013-04-27",
+      "id": "1759252874016"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "kitchen-utensils",
+      "description": "",
+      "date": "2013-04-06",
+      "id": "1759252884170"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "kitchen-utensils",
+      "description": "",
+      "date": "2013-04-23",
+      "id": "1759252944605"
+    },
+    {
+      "type": "expense",
+      "amount": 50,
+      "currency": "MDL",
+      "category": "other",
+      "description": "flower",
+      "date": "2013-04-25",
+      "id": "1759252978610"
+    },
+    {
+      "type": "expense",
+      "amount": 26,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-07",
+      "id": "1759253150177"
+    },
+    {
+      "type": "expense",
+      "amount": 45,
+      "currency": "MDL",
+      "category": "cleaning-products",
+      "description": "",
+      "date": "2013-04-13",
+      "id": "1759253183766"
+    },
+    {
+      "type": "expense",
+      "amount": 9,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-17",
+      "id": "1759253242862"
+    },
+    {
+      "type": "expense",
+      "amount": 245,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-06",
+      "id": "1759253323231"
+    },
+    {
+      "type": "expense",
+      "amount": 120,
+      "currency": "MDL",
+      "category": "cable-streaming",
+      "description": "",
+      "date": "2013-04-01",
+      "id": "1759253380692"
+    },
+    {
+      "type": "expense",
+      "amount": 200,
+      "currency": "MDL",
+      "category": "night-clubs",
+      "description": "",
+      "date": "2013-04-01",
+      "id": "1759253595855"
+    },
+    {
+      "type": "expense",
+      "amount": 25,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-21",
+      "id": "1759253822049"
+    },
+    {
+      "type": "expense",
+      "amount": 8,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-14",
+      "id": "1759253996484"
+    },
+    {
+      "type": "expense",
+      "amount": 100,
+      "currency": "MDL",
+      "category": "hospital-emergency",
+      "description": "",
+      "date": "2013-04-14",
+      "id": "1759254027906"
+    },
+    {
+      "type": "expense",
+      "amount": 162,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-25",
+      "id": "1759254081639"
+    },
+    {
+      "type": "expense",
+      "amount": 14,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-04",
+      "id": "1759254254914"
+    },
+    {
+      "type": "expense",
+      "amount": 8,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-08",
+      "id": "1759254486135"
+    },
+    {
+      "type": "expense",
+      "amount": 500,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to vitya",
+      "date": "2013-04-07",
+      "id": "1759254543747"
+    },
+    {
+      "type": "expense",
+      "amount": 149,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-10",
+      "id": "1759254587984"
+    },
+    {
+      "type": "expense",
+      "amount": 6,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-12",
+      "id": "1759254645310"
+    },
+    {
+      "type": "expense",
+      "amount": 7,
+      "currency": "MDL",
+      "category": "kitchen-utensils",
+      "description": "",
+      "date": "2013-04-25",
+      "id": "1759254720010"
+    },
+    {
+      "type": "expense",
+      "amount": 8,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-28",
+      "id": "1759254788616"
+    },
+    {
+      "type": "expense",
+      "amount": 400,
+      "currency": "MDL",
+      "category": "sports-recreation",
+      "description": "",
+      "date": "2013-04-02",
+      "id": "1759255071725"
+    },
+    {
+      "type": "expense",
+      "amount": 53,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-04-09",
+      "id": "1759255148370"
+    },
+    {
+      "type": "expense",
+      "amount": 3.23,
+      "currency": "EUR",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2025-09-30",
+      "id": "1759229513050"
+    },
+    {
+      "type": "expense",
+      "amount": 1.03,
+      "currency": "EUR",
+      "category": "personal-hygiene",
+      "description": "shaving razor",
+      "date": "2025-09-30",
+      "id": "1759229674437"
+    },
+    {
+      "type": "income",
+      "amount": 1347.12,
+      "currency": "EUR",
+      "category": "salary",
+      "description": "bs montage",
+      "date": "2025-09-11",
+      "id": "1759232215084"
+    },
+    {
+      "type": "income",
+      "amount": 15.81,
+      "currency": "EUR",
+      "category": "interest",
+      "description": "micb mdl deposit",
+      "date": "2025-09-13",
+      "id": "1759232581947"
+    },
+    {
+      "type": "expense",
+      "amount": 9.98,
+      "currency": "EUR",
+      "category": "groceries",
+      "description": "",
+      "date": "2025-09-03",
+      "id": "1759232974120"
+    },
+    {
+      "type": "expense",
+      "amount": 4.18,
+      "currency": "EUR",
+      "category": "groceries",
+      "description": "",
+      "date": "2025-09-08",
+      "id": "1759233057072"
+    },
+    {
+      "type": "expense",
+      "amount": 8.34,
+      "currency": "EUR",
+      "category": "groceries",
+      "description": "",
+      "date": "2025-09-17",
+      "id": "1759233120901"
+    },
+    {
+      "type": "expense",
+      "amount": 0.77,
+      "currency": "EUR",
+      "category": "groceries",
+      "description": "water",
+      "date": "2025-09-27",
+      "id": "1759233351732"
+    },
+    {
+      "type": "expense",
+      "amount": 130,
+      "currency": "EUR",
+      "category": "international-travel",
+      "description": "germany-moldova",
+      "date": "2025-09-12",
+      "id": "1759233618058"
+    },
+    {
+      "type": "expense",
+      "amount": 5.97,
+      "currency": "EUR",
+      "category": "interurban-travel",
+      "description": "",
+      "date": "2025-09-14",
+      "id": "1759234312504"
+    },
+    {
+      "type": "expense",
+      "amount": 7.67,
+      "currency": "EUR",
+      "category": "interurban-travel",
+      "description": "",
+      "date": "2025-09-17",
+      "id": "1759234403964"
+    },
+    {
+      "type": "expense",
+      "amount": 500,
+      "currency": "EUR",
+      "category": "rent-mortgage",
+      "description": "for aug-sept",
+      "date": "2025-09-11",
+      "id": "1759234495459"
+    },
+    {
+      "type": "expense",
+      "amount": 4.12,
+      "currency": "EUR",
+      "category": "phone",
+      "description": "moldcell",
+      "date": "2025-09-12",
+      "id": "1759234591980"
+    },
+    {
+      "type": "investment",
+      "amount": 256.92,
+      "currency": "EUR",
+      "category": "binance-p2p",
+      "description": "",
+      "date": "2025-09-05",
+      "id": "1759234657799"
+    },
+    {
+      "type": "expense",
+      "amount": 3,
+      "currency": "EUR",
+      "category": "clothing",
+      "description": "socks",
+      "date": "2025-09-16",
+      "id": "1759234787885"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "EUR",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2025-09-03",
+      "id": "1759234850914"
+    },
+    {
+      "type": "expense",
+      "amount": 11.74,
+      "currency": "EUR",
+      "category": "alcohol-beverages",
+      "description": "",
+      "date": "2025-09-04",
+      "id": "1759234927018"
+    },
+    {
+      "type": "expense",
+      "amount": 2.75,
+      "currency": "EUR",
+      "category": "alcohol-beverages",
+      "description": "",
+      "date": "2025-09-07",
+      "id": "1759235011582"
+    },
+    {
+      "type": "expense",
+      "amount": 13,
+      "currency": "EUR",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2025-09-08",
+      "id": "1759235059651"
+    },
+    {
+      "type": "expense",
+      "amount": 3.2,
+      "currency": "EUR",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2025-09-13",
+      "id": "1759235128126"
+    },
+    {
+      "type": "expense",
+      "amount": 2.52,
+      "currency": "EUR",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2025-09-17",
+      "id": "1759235159508"
+    },
+    {
+      "type": "expense",
+      "amount": 2.52,
+      "currency": "EUR",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2025-09-23",
+      "id": "1759235216440"
+    },
+    {
+      "type": "expense",
+      "amount": 2.97,
+      "currency": "EUR",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2025-09-27",
+      "id": "1759235248314"
+    },
+    {
+      "type": "expense",
+      "amount": 2.5,
+      "currency": "EUR",
+      "category": "lottery-gambling",
+      "description": "eurojackpot",
+      "date": "2025-09-07",
+      "id": "1759235386563"
+    },
+    {
+      "type": "expense",
+      "amount": 49.22,
+      "currency": "EUR",
+      "category": "gifts",
+      "description": "",
+      "date": "2025-09-11",
+      "id": "1759235463746"
+    },
+    {
+      "type": "expense",
+      "amount": 30,
+      "currency": "EUR",
+      "category": "other",
+      "description": "bs montage lost battery fine",
+      "date": "2025-09-11",
+      "id": "1759235525089"
+    },
+    {
+      "type": "expense",
+      "amount": 1,
+      "currency": "EUR",
+      "category": "other",
+      "description": "toilet",
+      "date": "2025-09-12",
+      "id": "1759235617539"
+    },
+    {
+      "type": "expense",
+      "amount": 0.67,
+      "currency": "EUR",
+      "category": "coffee-shops",
+      "description": "",
+      "date": "2025-09-13",
+      "id": "1759235685639"
+    },
+    {
+      "type": "expense",
+      "amount": 17.04,
+      "currency": "EUR",
+      "category": "software-subscriptions",
+      "description": "cursor",
+      "date": "2025-09-16",
+      "id": "1759235747227"
+    },
+    {
+      "type": "expense",
+      "amount": 3.09,
+      "currency": "EUR",
+      "category": "coffee-shops",
+      "description": "",
+      "date": "2025-09-17",
+      "id": "1759235786111"
+    },
+    {
+      "type": "investment",
+      "amount": 20,
+      "currency": "EUR",
+      "category": "precious-metals",
+      "description": "revolut xag",
+      "date": "2025-09-08",
+      "id": "1759310617780"
+    },
+    {
+      "type": "income",
+      "amount": 108,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-05-31",
+      "id": "1759311316393"
+    },
+    {
+      "type": "income",
+      "amount": 88,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-05-04",
+      "id": "1759311420319"
+    },
+    {
+      "type": "income",
+      "amount": 8000,
+      "currency": "MDL",
+      "category": "other",
+      "description": "500 euro from Italy",
+      "date": "2013-05-06",
+      "id": "1759311492288"
+    },
+    {
+      "type": "income",
+      "amount": 43,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-05-12",
+      "id": "1759311533626"
+    },
+    {
+      "type": "income",
+      "amount": 24,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-05-14",
+      "id": "1759311568626"
+    },
+    {
+      "type": "income",
+      "amount": 135,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-05-20",
+      "id": "1759311602675"
+    },
+    {
+      "type": "income",
+      "amount": 83,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-05-24",
+      "id": "1759311630915"
+    },
+    {
+      "type": "income",
+      "amount": 103,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-05-27",
+      "id": "1759311663925"
+    },
+    {
+      "type": "income",
+      "amount": 110,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-05-29",
+      "id": "1759311698733"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-04-26",
+      "id": "1759311831785"
+    },
+    {
+      "type": "expense",
+      "amount": 120,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-05-05",
+      "id": "1759311929453"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-05-07",
+      "id": "1759311965439"
+    },
+    {
+      "type": "expense",
+      "amount": 6,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-05-09",
+      "id": "1759312043695"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-05-12",
+      "id": "1759312080392"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-05-14",
+      "id": "1759312107361"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-05-16",
+      "id": "1759312143146"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-05-15",
+      "id": "1759312198323"
+    },
+    {
+      "type": "expense",
+      "amount": 4,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-05-18",
+      "id": "1759312252206"
+    },
+    {
+      "type": "expense",
+      "amount": 8,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-05-26",
+      "id": "1759315233653"
+    },
+    {
+      "type": "expense",
+      "amount": 4,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-05-31",
+      "id": "1759315252347"
+    },
+    {
+      "type": "expense",
+      "amount": 138,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-02",
+      "id": "1759315641111"
+    },
+    {
+      "type": "expense",
+      "amount": 176,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-03",
+      "id": "1759315702864"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-08",
+      "id": "1759315740529"
+    },
+    {
+      "type": "expense",
+      "amount": 24,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-09",
+      "id": "1759315826275"
+    },
+    {
+      "type": "expense",
+      "amount": 144,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-10",
+      "id": "1759315853805"
+    },
+    {
+      "type": "expense",
+      "amount": 50,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-13",
+      "id": "1759315882289"
+    },
+    {
+      "type": "expense",
+      "amount": 52,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-14",
+      "id": "1759316118780"
+    },
+    {
+      "type": "expense",
+      "amount": 86,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-16",
+      "id": "1759316178590"
+    },
+    {
+      "type": "expense",
+      "amount": 40,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-17",
+      "id": "1759316205831"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-18",
+      "id": "1759316230817"
+    },
+    {
+      "type": "expense",
+      "amount": 35,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-20",
+      "id": "1759316259305"
+    },
+    {
+      "type": "expense",
+      "amount": 148,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-22",
+      "id": "1759316287905"
+    },
+    {
+      "type": "expense",
+      "amount": 62,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-24",
+      "id": "1759316320450"
+    },
+    {
+      "type": "expense",
+      "amount": 136,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-26",
+      "id": "1759316352195"
+    },
+    {
+      "type": "expense",
+      "amount": 7,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-27",
+      "id": "1759316378355"
+    },
+    {
+      "type": "investment",
+      "amount": 1000,
+      "currency": "EUR",
+      "category": "savings-account",
+      "description": "n26 savings 0.25%",
+      "date": "2025-09-18",
+      "id": "1759322321532"
+    },
+    {
+      "type": "investment",
+      "amount": 1300,
+      "currency": "EUR",
+      "category": "savings-account",
+      "description": "n26 savings 0.25%",
+      "date": "2025-09-16",
+      "id": "1759322345180"
+    },
+    {
+      "type": "investment",
+      "amount": 20,
+      "currency": "EUR",
+      "category": "precious-metals",
+      "description": "revolut xag",
+      "date": "2025-09-22",
+      "id": "1759322568557"
+    },
+    {
+      "type": "investment",
+      "amount": 4989,
+      "currency": "EUR",
+      "category": "term-deposits",
+      "description": "Micb Major online 1.8%",
+      "date": "2025-09-19",
+      "id": "1759322571348"
+    },
+    {
+      "type": "expense",
+      "amount": 130,
+      "currency": "MDL",
+      "category": "other",
+      "description": "sasha's school",
+      "date": "2013-05-16",
+      "id": "1759322988525"
+    },
+    {
+      "type": "expense",
+      "amount": 4500,
+      "currency": "MDL",
+      "category": "other",
+      "description": "sasha's school",
+      "date": "2013-05-21",
+      "id": "1759323036417"
+    },
+    {
+      "type": "expense",
+      "amount": 30,
+      "currency": "MDL",
+      "category": "phone",
+      "description": "mobile",
+      "date": "2013-05-16",
+      "id": "1759323116843"
+    },
+    {
+      "type": "expense",
+      "amount": 50,
+      "currency": "MDL",
+      "category": "phone",
+      "description": "landline",
+      "date": "2013-05-14",
+      "id": "1759323160339"
+    },
+    {
+      "type": "expense",
+      "amount": 150,
+      "currency": "MDL",
+      "category": "internet",
+      "description": "",
+      "date": "2013-05-09",
+      "id": "1759323222866"
+    },
+    {
+      "type": "expense",
+      "amount": 114,
+      "currency": "MDL",
+      "category": "water-sewer",
+      "description": "",
+      "date": "2013-05-22",
+      "id": "1759323286993"
+    },
+    {
+      "type": "expense",
+      "amount": 356,
+      "currency": "MDL",
+      "category": "heating",
+      "description": "",
+      "date": "2013-05-22",
+      "id": "1759323330088"
+    },
+    {
+      "type": "expense",
+      "amount": 26,
+      "currency": "MDL",
+      "category": "gas",
+      "description": "",
+      "date": "2013-05-22",
+      "id": "1759323368836"
+    },
+    {
+      "type": "expense",
+      "amount": 178,
+      "currency": "MDL",
+      "category": "electricity",
+      "description": "",
+      "date": "2013-05-29",
+      "id": "1759323411149"
+    },
+    {
+      "type": "expense",
+      "amount": 94,
+      "currency": "MDL",
+      "category": "building-maintenance",
+      "description": "",
+      "date": "2013-05-22",
+      "id": "1759323711403"
+    },
+    {
+      "type": "expense",
+      "amount": 60,
+      "currency": "MDL",
+      "category": "cable-streaming",
+      "description": "",
+      "date": "2013-05-02",
+      "id": "1759323762064"
+    },
+    {
+      "type": "expense",
+      "amount": 12,
+      "currency": "MDL",
+      "category": "kitchen-utensils",
+      "description": "",
+      "date": "2013-05-16",
+      "id": "1759323826385"
+    },
+    {
+      "type": "expense",
+      "amount": 18,
+      "currency": "MDL",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2013-05-03",
+      "id": "1759323881711"
+    },
+    {
+      "type": "expense",
+      "amount": 52,
+      "currency": "MDL",
+      "category": "alcohol",
+      "description": "",
+      "date": "2013-05-05",
+      "id": "1759323922960"
+    },
+    {
+      "type": "expense",
+      "amount": 13,
+      "currency": "MDL",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2013-05-11",
+      "id": "1759323959778"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2013-05-14",
+      "id": "1759323987897"
+    },
+    {
+      "type": "expense",
+      "amount": 23,
+      "currency": "MDL",
+      "category": "alcohol",
+      "description": "",
+      "date": "2013-05-15",
+      "id": "1759324017899"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2013-05-16",
+      "id": "1759324046158"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2013-05-19",
+      "id": "1759324070988"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2013-05-24",
+      "id": "1759324117795"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2013-05-28",
+      "id": "1759324151409"
+    },
+    {
+      "type": "expense",
+      "amount": 182,
+      "currency": "MDL",
+      "category": "household-goods",
+      "description": "",
+      "date": "2013-05-22",
+      "id": "1759324289378"
+    },
+    {
+      "type": "expense",
+      "amount": 90,
+      "currency": "MDL",
+      "category": "other",
+      "description": "residence registration",
+      "date": "2013-05-04",
+      "id": "1759324355067"
+    },
+    {
+      "type": "expense",
+      "amount": 100,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-05-05",
+      "id": "1759324391563"
+    },
+    {
+      "type": "expense",
+      "amount": 50,
+      "currency": "MDL",
+      "category": "haircuts-salon",
+      "description": "",
+      "date": "2013-05-14",
+      "id": "1759324422704"
+    },
+    {
+      "type": "expense",
+      "amount": 200,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-05-17",
+      "id": "1759324461833"
+    },
+    {
+      "type": "expense",
+      "amount": 1600,
+      "currency": "MDL",
+      "category": "gifts",
+      "description": "Nicoleta's BD",
+      "date": "2013-05-22",
+      "id": "1759324506857"
+    },
+    {
+      "type": "expense",
+      "amount": 302,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-31",
+      "id": "1759325512372"
+    },
+    {
+      "type": "expense",
+      "amount": 8,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-05-28",
+      "id": "1759326286262"
+    },
+    {
+      "type": "income",
+      "amount": 17568,
+      "currency": "MDL",
+      "category": "other",
+      "description": "transfer from italy",
+      "date": "2013-06-01",
+      "id": "1759329288812"
+    },
+    {
+      "type": "income",
+      "amount": 103,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-06-07",
+      "id": "1759329354804"
+    },
+    {
+      "type": "income",
+      "amount": 380,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-06-10",
+      "id": "1759329392717"
+    },
+    {
+      "type": "income",
+      "amount": 273,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-06-14",
+      "id": "1759329423118"
+    },
+    {
+      "type": "income",
+      "amount": 35,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-06-15",
+      "id": "1759329454871"
+    },
+    {
+      "type": "income",
+      "amount": 42,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-06-16",
+      "id": "1759329496408"
+    },
+    {
+      "type": "income",
+      "amount": 91,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-06-18",
+      "id": "1759329537010"
+    },
+    {
+      "type": "income",
+      "amount": 94,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-06-19",
+      "id": "1759329561554"
+    },
+    {
+      "type": "income",
+      "amount": 76,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-06-22",
+      "id": "1759329594107"
+    },
+    {
+      "type": "income",
+      "amount": 65,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-06-24",
+      "id": "1759329620172"
+    },
+    {
+      "type": "income",
+      "amount": 200,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-06-27",
+      "id": "1759329646149"
+    },
+    {
+      "type": "expense",
+      "amount": 30,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-06-01",
+      "id": "1759330050402"
+    },
+    {
+      "type": "expense",
+      "amount": 6,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-06-03",
+      "id": "1759330120212"
+    },
+    {
+      "type": "expense",
+      "amount": 4,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-06-04",
+      "id": "1759330151397"
+    },
+    {
+      "type": "expense",
+      "amount": 2,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-06-06",
+      "id": "1759333133891"
+    },
+    {
+      "type": "expense",
+      "amount": 26,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-06-28",
+      "id": "1759333169722"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-06-29",
+      "id": "1759333197715"
+    },
+    {
+      "type": "expense",
+      "amount": 24,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-06-30",
+      "id": "1759333221956"
+    },
+    {
+      "type": "expense",
+      "amount": 52,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-01",
+      "id": "1759333255766"
+    },
+    {
+      "type": "expense",
+      "amount": 23,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-06",
+      "id": "1759333282237"
+    },
+    {
+      "type": "expense",
+      "amount": 120,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-09",
+      "id": "1759333309350"
+    },
+    {
+      "type": "expense",
+      "amount": 67,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-10",
+      "id": "1759333343119"
+    },
+    {
+      "type": "expense",
+      "amount": 68,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-13",
+      "id": "1759333426332"
+    },
+    {
+      "type": "expense",
+      "amount": 15,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-15",
+      "id": "1759333559719"
+    },
+    {
+      "type": "expense",
+      "amount": 77,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-15",
+      "id": "1759333583159"
+    },
+    {
+      "type": "expense",
+      "amount": 192,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-17",
+      "id": "1759333612265"
+    },
+    {
+      "type": "expense",
+      "amount": 84,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-21",
+      "id": "1759333634280"
+    },
+    {
+      "type": "expense",
+      "amount": 116,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-22",
+      "id": "1759333659506"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-24",
+      "id": "1759333676058"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-25",
+      "id": "1759333691947"
+    },
+    {
+      "type": "expense",
+      "amount": 15,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-27",
+      "id": "1759333713891"
+    },
+    {
+      "type": "expense",
+      "amount": 112,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-28",
+      "id": "1759333733796"
+    },
+    {
+      "type": "expense",
+      "amount": 177,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-06-30",
+      "id": "1759333754724"
+    },
+    {
+      "type": "expense",
+      "amount": 22,
+      "currency": "MDL",
+      "category": "phone",
+      "description": "mobile",
+      "date": "2013-06-26",
+      "id": "1759333868752"
+    },
+    {
+      "type": "expense",
+      "amount": 25,
+      "currency": "MDL",
+      "category": "phone",
+      "description": "landline",
+      "date": "2013-06-15",
+      "id": "1759333901140"
+    },
+    {
+      "type": "expense",
+      "amount": 247,
+      "currency": "MDL",
+      "category": "internet",
+      "description": "",
+      "date": "2013-06-10",
+      "id": "1759333942194"
+    },
+    {
+      "type": "expense",
+      "amount": 93,
+      "currency": "MDL",
+      "category": "water-sewer",
+      "description": "",
+      "date": "2013-06-15",
+      "id": "1759333966491"
+    },
+    {
+      "type": "expense",
+      "amount": 150,
+      "currency": "MDL",
+      "category": "heating",
+      "description": "",
+      "date": "2013-06-13",
+      "id": "1759334001716"
+    },
+    {
+      "type": "expense",
+      "amount": 34,
+      "currency": "MDL",
+      "category": "gas",
+      "description": "",
+      "date": "2013-06-16",
+      "id": "1759334029021"
+    },
+    {
+      "type": "expense",
+      "amount": 137,
+      "currency": "MDL",
+      "category": "electricity",
+      "description": "",
+      "date": "2013-06-23",
+      "id": "1759334060262"
+    },
+    {
+      "type": "expense",
+      "amount": 95,
+      "currency": "MDL",
+      "category": "building-maintenance",
+      "description": "",
+      "date": "2013-06-15",
+      "id": "1759334092983"
+    },
+    {
+      "type": "expense",
+      "amount": 60,
+      "currency": "MDL",
+      "category": "cable-streaming",
+      "description": "",
+      "date": "2013-06-02",
+      "id": "1759334117544"
+    },
+    {
+      "type": "expense",
+      "amount": 1650,
+      "currency": "MDL",
+      "category": "clothing",
+      "description": "",
+      "date": "2013-06-15",
+      "id": "1759334150000"
+    },
+    {
+      "type": "expense",
+      "amount": 135,
+      "currency": "MDL",
+      "category": "restaurants",
+      "description": "",
+      "date": "2013-06-02",
+      "id": "1759334184242"
+    },
+    {
+      "type": "expense",
+      "amount": 40,
+      "currency": "MDL",
+      "category": "restaurants",
+      "description": "",
+      "date": "2013-06-03",
+      "id": "1759334248316"
+    },
+    {
+      "type": "expense",
+      "amount": 30,
+      "currency": "MDL",
+      "category": "fast-food",
+      "description": "",
+      "date": "2013-06-04",
+      "id": "1759334267068"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "fast-food",
+      "description": "",
+      "date": "2013-06-06",
+      "id": "1759334295246"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "alcohol",
+      "description": "",
+      "date": "2013-06-13",
+      "id": "1759334327208"
+    },
+    {
+      "type": "expense",
+      "amount": 14,
+      "currency": "MDL",
+      "category": "alcohol",
+      "description": "",
+      "date": "2013-06-17",
+      "id": "1759334355374"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "cigarettes",
+      "description": "",
+      "date": "2013-06-21",
+      "id": "1759334375968"
+    },
+    {
+      "type": "expense",
+      "amount": 200,
+      "currency": "MDL",
+      "category": "hospital-emergency",
+      "description": "",
+      "date": "2013-06-16",
+      "id": "1759334412769"
+    },
+    {
+      "type": "expense",
+      "amount": 140,
+      "currency": "MDL",
+      "category": "household-goods",
+      "description": "",
+      "date": "2013-06-10",
+      "id": "1759334439801"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "household-goods",
+      "description": "",
+      "date": "2013-06-22",
+      "id": "1759334469938"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "other",
+      "description": "hair brush",
+      "date": "2013-06-02",
+      "id": "1759334634296"
+    },
+    {
+      "type": "expense",
+      "amount": 8229,
+      "currency": "MDL",
+      "category": "personal-loans",
+      "description": "gave to aliona's dad",
+      "date": "2013-06-13",
+      "id": "1759334695707"
+    },
+    {
+      "type": "expense",
+      "amount": 9,
+      "currency": "MDL",
+      "category": "personal-hygiene",
+      "description": "tooth brush",
+      "date": "2013-06-20",
+      "id": "1759335400306"
+    },
+    {
+      "type": "expense",
+      "amount": 137,
+      "currency": "MDL",
+      "category": "software-subscriptions",
+      "description": "freelancer.ru",
+      "date": "2013-06-15",
+      "id": "1759335448282"
+    },
+    {
+      "type": "expense",
+      "amount": 100,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-06-17",
+      "id": "1759335477827"
+    },
+    {
+      "type": "expense",
+      "amount": 45,
+      "currency": "MDL",
+      "category": "haircuts-salon",
+      "description": "",
+      "date": "2013-06-21",
+      "id": "1759335500660"
+    },
+    {
+      "type": "expense",
+      "amount": 400,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-06-18",
+      "id": "1759335528662"
+    },
+    {
+      "type": "income",
+      "amount": 125,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-07-05",
+      "id": "1759336802766"
+    },
+    {
+      "type": "income",
+      "amount": 70,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-07-08",
+      "id": "1759336829236"
+    },
+    {
+      "type": "income",
+      "amount": 8129,
+      "currency": "MDL",
+      "category": "other",
+      "description": "transfer from Italy",
+      "date": "2013-07-09",
+      "id": "1759336865710"
+    },
+    {
+      "type": "income",
+      "amount": 174,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-07-10",
+      "id": "1759336890462"
+    },
+    {
+      "type": "income",
+      "amount": 6480,
+      "currency": "MDL",
+      "category": "other",
+      "description": "Transfer from Italy",
+      "date": "2013-07-11",
+      "id": "1759336916128"
+    },
+    {
+      "type": "income",
+      "amount": 54,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-07-13",
+      "id": "1759336942065"
+    },
+    {
+      "type": "income",
+      "amount": 58,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-07-14",
+      "id": "1759336971145"
+    },
+    {
+      "type": "income",
+      "amount": 26,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-07-16",
+      "id": "1759337000522"
+    },
+    {
+      "type": "income",
+      "amount": 191,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-07-20",
+      "id": "1759337022939"
+    },
+    {
+      "type": "income",
+      "amount": 1355,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "Translation",
+      "date": "2013-07-25",
+      "id": "1759337058204"
+    },
+    {
+      "type": "income",
+      "amount": 373,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-07-29",
+      "id": "1759337082669"
+    },
+    {
+      "type": "income",
+      "amount": 115,
+      "currency": "MDL",
+      "category": "freelance-income",
+      "description": "webmoney",
+      "date": "2013-07-31",
+      "id": "1759337104533"
+    },
+    {
+      "type": "expense",
+      "amount": 4,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-07-03",
+      "id": "1759337303716"
+    },
+    {
+      "type": "expense",
+      "amount": 12,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-07-08",
+      "id": "1759337322461"
+    },
+    {
+      "type": "expense",
+      "amount": 60,
+      "currency": "MDL",
+      "category": "interurban-travel",
+      "description": "",
+      "date": "2013-07-11",
+      "id": "1759337374629"
+    },
+    {
+      "type": "expense",
+      "amount": 66,
+      "currency": "MDL",
+      "category": "interurban-travel",
+      "description": "",
+      "date": "2013-07-12",
+      "id": "1759337402462"
+    },
+    {
+      "type": "expense",
+      "amount": 5,
+      "currency": "MDL",
+      "category": "public-transit",
+      "description": "",
+      "date": "2013-07-21",
+      "id": "1759337427296"
+    },
+    {
+      "type": "expense",
+      "amount": 52,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-03",
+      "id": "1759337673736"
+    },
+    {
+      "type": "expense",
+      "amount": 100,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-04",
+      "id": "1759337693432"
+    },
+    {
+      "type": "expense",
+      "amount": 140,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-05",
+      "id": "1759337715537"
+    },
+    {
+      "type": "expense",
+      "amount": 79,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-07",
+      "id": "1759337733873"
+    },
+    {
+      "type": "expense",
+      "amount": 54,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-08",
+      "id": "1759337753443"
+    },
+    {
+      "type": "expense",
+      "amount": 31,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-10",
+      "id": "1759337778602"
+    },
+    {
+      "type": "expense",
+      "amount": 17,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-11",
+      "id": "1759337796267"
+    },
+    {
+      "type": "expense",
+      "amount": 53,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-16",
+      "id": "1759337813253"
+    },
+    {
+      "type": "expense",
+      "amount": 45,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-19",
+      "id": "1759337834700"
+    },
+    {
+      "type": "expense",
+      "amount": 10,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-20",
+      "id": "1759337858621"
+    },
+    {
+      "type": "expense",
+      "amount": 25,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-21",
+      "id": "1759337882990"
+    },
+    {
+      "type": "expense",
+      "amount": 35,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-23",
+      "id": "1759337954608"
+    },
+    {
+      "type": "expense",
+      "amount": 36,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-24",
+      "id": "1759337974800"
+    },
+    {
+      "type": "expense",
+      "amount": 126,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-25",
+      "id": "1759337990562"
+    },
+    {
+      "type": "expense",
+      "amount": 157,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-28",
+      "id": "1759338008874"
+    },
+    {
+      "type": "expense",
+      "amount": 69,
+      "currency": "MDL",
+      "category": "groceries",
+      "description": "",
+      "date": "2013-07-30",
+      "id": "1759338030276"
+    },
+    {
+      "type": "expense",
+      "amount": 6500,
+      "currency": "MDL",
+      "category": "tuition",
+      "description": "sasha's university",
+      "date": "2013-07-31",
+      "id": "1759338211962"
+    },
+    {
+      "type": "expense",
+      "amount": 70,
+      "currency": "MDL",
+      "category": "cleaning-products",
+      "description": "",
+      "date": "2013-07-12",
+      "id": "1759338241745"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "phone",
+      "description": "mobile",
+      "date": "2013-07-08",
+      "id": "1759338271434"
+    },
+    {
+      "type": "expense",
+      "amount": 50,
+      "currency": "MDL",
+      "category": "phone",
+      "description": "mobile",
+      "date": "2013-07-11",
+      "id": "1759338298251"
+    },
+    {
+      "type": "expense",
+      "amount": 15,
+      "currency": "MDL",
+      "category": "phone",
+      "description": "landline",
+      "date": "2013-07-23",
+      "id": "1759338323956"
+    },
+    {
+      "type": "expense",
+      "amount": 80,
+      "currency": "MDL",
+      "category": "internet",
+      "description": "",
+      "date": "2013-07-11",
+      "id": "1759338353368"
+    },
+    {
+      "type": "expense",
+      "amount": 120,
+      "currency": "MDL",
+      "category": "water-sewer",
+      "description": "",
+      "date": "2013-07-23",
+      "id": "1759338376349"
+    },
+    {
+      "type": "expense",
+      "amount": 101,
+      "currency": "MDL",
+      "category": "heating",
+      "description": "",
+      "date": "2013-07-23",
+      "id": "1759338399325"
+    },
+    {
+      "type": "expense",
+      "amount": 33,
+      "currency": "MDL",
+      "category": "gas",
+      "description": "",
+      "date": "2013-07-23",
+      "id": "1759338423958"
+    },
+    {
+      "type": "expense",
+      "amount": 219,
+      "currency": "MDL",
+      "category": "electricity",
+      "description": "",
+      "date": "2013-07-23",
+      "id": "1759338441151"
+    },
+    {
+      "type": "expense",
+      "amount": 94,
+      "currency": "MDL",
+      "category": "building-maintenance",
+      "description": "",
+      "date": "2013-07-23",
+      "id": "1759338465688"
+    },
+    {
+      "type": "expense",
+      "amount": 60,
+      "currency": "MDL",
+      "category": "cable-streaming",
+      "description": "",
+      "date": "2013-07-01",
+      "id": "1759338488072"
+    },
+    {
+      "type": "expense",
+      "amount": 40,
+      "currency": "MDL",
+      "category": "electronics",
+      "description": "",
+      "date": "2013-07-25",
+      "id": "1759338515722"
+    },
+    {
+      "type": "expense",
+      "amount": 912,
+      "currency": "MDL",
+      "category": "furniture-appliances",
+      "description": "",
+      "date": "2013-07-31",
+      "id": "1759338540850"
+    },
+    {
+      "type": "expense",
+      "amount": 88,
+      "currency": "MDL",
+      "category": "restaurants",
+      "description": "",
+      "date": "2013-07-21",
+      "id": "1759338567901"
+    },
+    {
+      "type": "expense",
+      "amount": 49,
+      "currency": "MDL",
+      "category": "household-goods",
+      "description": "",
+      "date": "2013-07-03",
+      "id": "1759338599669"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-07-01",
+      "id": "1759338634405"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-07-02",
+      "id": "1759338657511"
+    },
+    {
+      "type": "expense",
+      "amount": 20,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-07-03",
+      "id": "1759338682159"
+    },
+    {
+      "type": "expense",
+      "amount": 200,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-07-04",
+      "id": "1759338709024"
+    },
+    {
+      "type": "expense",
+      "amount": 100,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-07-07",
+      "id": "1759338739667"
+    },
+    {
+      "type": "expense",
+      "amount": 70,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-07-08",
+      "id": "1759338774595"
+    },
+    {
+      "type": "expense",
+      "amount": 1640,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-07-11",
+      "id": "1759338805170"
+    },
+    {
+      "type": "expense",
+      "amount": 110,
+      "currency": "MDL",
+      "category": "gifts",
+      "description": "candies for nephews",
+      "date": "2013-07-12",
+      "id": "1759338848500"
+    },
+    {
+      "type": "expense",
+      "amount": 45,
+      "currency": "MDL",
+      "category": "haircuts-salon",
+      "description": "",
+      "date": "2013-07-25",
+      "id": "1759338873375"
+    },
+    {
+      "type": "expense",
+      "amount": 200,
+      "currency": "MDL",
+      "category": "other",
+      "description": "gave to sasha",
+      "date": "2013-07-26",
+      "id": "1759338898758"
+    }
+  ],
+  "exportDate": "2025-10-02T18:33:35.863Z",
+  "version": "1.0.0",
+  "totalTransactions": 311
+}

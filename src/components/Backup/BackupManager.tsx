@@ -59,15 +59,38 @@ export const BackupManager: React.FC = () => {
     setImportSuccess(false);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const content = e.target?.result as string;
-        importData(content);
+        
+        // Debug: Check file content
+        console.log('📁 [BACKUP] File content preview:', content.substring(0, 200) + '...');
+        
+        try {
+          const parsed = JSON.parse(content);
+          console.log('📊 [BACKUP] File structure:', {
+            keys: Object.keys(parsed),
+            hasTransactions: !!parsed.transactions,
+            transactionCount: parsed.transactions?.length || 0,
+            version: parsed.version
+          });
+        } catch (parseError) {
+          console.error('❌ [BACKUP] Invalid JSON:', parseError);
+          setImportError('File is not valid JSON format');
+          setIsImporting(false);
+          return;
+        }
+        
+        await importData(content);
         setShowImportSuccess(true);
+        console.log('✅ [BACKUP] Import completed successfully');
+        
         // Refresh backup info after importing
         setTimeout(() => refreshBackupInfo(), 100);
       } catch (error) {
-        setImportError('Invalid backup file format');
+        console.error('❌ [BACKUP] Import error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown import error';
+        setImportError(`Import failed: ${errorMessage}`);
       } finally {
         setIsImporting(false);
         if (fileInputRef.current) {

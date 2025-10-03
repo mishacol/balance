@@ -23,6 +23,7 @@ export const useAutoBackup = () => {
       }, 60 * 60 * 1000); // 1 hour in milliseconds
     } else {
       console.log('⏹️ Automatic backup disabled (manual mode)');
+      console.log('🔒 MANUAL MODE: All automatic backup creation is BLOCKED');
     }
 
     // Cleanup on unmount or mode change

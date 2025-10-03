@@ -26,7 +26,7 @@ interface TransactionStore {
   createBackup: () => void;
   restoreFromBackup: (backupIndex: number) => void;
   exportData: () => string;
-  importData: (jsonData: string) => void;
+  importData: (jsonData: string) => Promise<void>;
   downloadBackup: () => void;
   clearBackups: () => void;
   getBackupInfo: () => { count: number; latest: Date | null; totalSize: number };
@@ -73,10 +73,8 @@ export const useTransactionStore = create<TransactionStore>()(
           };
           set((state) => {
             const newTransactions = [...state.transactions, newTransaction];
-            // Create backup only if in manual mode (automatic backups are handled by timer)
-            if (state.backupMode === 'manual') {
-              setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
-            }
+            // Manual mode: NO automatic backups - user must create backups manually
+            // Automatic mode: backups are handled by the timer in useAutoBackup hook
             return { transactions: newTransactions };
           });
         }
@@ -89,10 +87,8 @@ export const useTransactionStore = create<TransactionStore>()(
               ? { ...transaction, ...updatedTransaction }
               : transaction
           );
-          // Create backup only if in manual mode (automatic backups are handled by timer)
-          if (state.backupMode === 'manual') {
-            setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
-          }
+          // Manual mode: NO automatic backups - user must create backups manually
+          // Automatic mode: backups are handled by the timer in useAutoBackup hook
           return { transactions: newTransactions };
         });
       },
@@ -102,10 +98,8 @@ export const useTransactionStore = create<TransactionStore>()(
           const newTransactions = state.transactions.filter(
             (transaction) => transaction.id !== id
           );
-          // Create backup only if in manual mode (automatic backups are handled by timer)
-          if (state.backupMode === 'manual') {
-            setTimeout(() => dataBackupService.createBackup(newTransactions), 100);
-          }
+          // Manual mode: NO automatic backups - user must create backups manually
+          // Automatic mode: backups are handled by the timer in useAutoBackup hook
           return { transactions: newTransactions };
         });
       },
@@ -272,34 +266,57 @@ export const useTransactionStore = create<TransactionStore>()(
         return dataBackupService.exportData(transactions);
       },
 
-      importData: (jsonData) => {
+      importData: async (jsonData) => {
         try {
-          const importedTransactions = dataBackupService.importData(jsonData);
-          const currentTransactions = get().transactions;
+ const state = get();
+          const currentTransactions = state.transactions;
           
           console.log(`📊 Before import: ${currentTransactions.length} transactions`);
-          console.log(`📥 Importing: ${importedTransactions.length} transactions`);
           
-          // Filter out duplicates based on ID to prevent conflicts
-          const existingIds = new Set(currentTransactions.map(t => t.id));
-          const newTransactions = importedTransactions.filter(t => !existingIds.has(t.id));
-          
-          console.log(`🆕 New transactions (after deduplication): ${newTransactions.length}`);
-          
-          const mergedTransactions = [...currentTransactions, ...newTransactions];
-          console.log(`📊 After merge: ${mergedTransactions.length} transactions`);
-          
-          // Force update the store
-          set({ transactions: mergedTransactions });
-          
-          // Verify the update worked
-          setTimeout(() => {
-            const verifyTransactions = get().transactions;
-            console.log(`✅ Verification: ${verifyTransactions.length} transactions in store`);
-          }, 100);
-          
-          // Create backup after import
-          setTimeout(() => dataBackupService.createBackup(mergedTransactions), 200);
+          if (state.isUsingSupabase) {
+            // Use Supabase import
+            console.log('🔄 [STORE] Using Supabase import path');
+            const { error } = await supabaseService.importData(jsonData);
+            if (error) {
+              console.error('❌ [STORE] Supabase import failed:', error);
+              throw error;
+            }
+            
+            // Clear localStorage to prevent duplicate migration
+            localStorage.removeItem('transaction-storage');
+            console.log('🗑️ [STORE] Cleared localStorage to prevent duplicate migration');
+            
+            // Reload transactions from Supabase
+            console.log('🔄 [STORE] Reloading transactions from Supabase');
+            await get().loadTransactionsFromSupabase();
+            
+            console.log(`✅ [STORE] Supabase import completed successfully`);
+          } else {
+            // Use localStorage import (original logic)
+            const importedTransactions = dataBackupService.importData(jsonData);
+            console.log(`📥 Importing: ${importedTransactions.length} transactions`);
+            
+            // Filter out duplicates based on ID to prevent conflicts
+            const existingIds = new Set(currentTransactions.map(t => t.id));
+            const newTransactions = importedTransactions.filter(t => !existingIds.has(t.id));
+            
+            console.log(`🆕 New transactions (after deduplication): ${newTransactions.length}`);
+            
+            const mergedTransactions = [...currentTransactions, ...newTransactions];
+            console.log(`📊 After merge: ${mergedTransactions.length} transactions`);
+            
+            // Force update the store
+            set({ transactions: mergedTransactions });
+            
+            // Verify the update worked
+            setTimeout(() => {
+              const verifyTransactions = get().transactions;
+              console.log(`✅ Verification: ${verifyTransactions.length} transactions in store`);
+            }, 100);
+            
+            // Create backup after import
+            setTimeout(() => dataBackupService.createBackup(mergedTransactions), 200);
+          }
         } catch (error) {
           console.error('Failed to import data:', error);
           throw error;
@@ -333,6 +350,13 @@ export const useTransactionStore = create<TransactionStore>()(
       migrateFromLocalStorage: async () => {
         try {
           const state = get();
+          
+          // Check if we're already using Supabase data
+          if (state.isUsingSupabase) {
+            console.log('ℹ️ [STORE] Already using Supabase, skipping migration');
+            return;
+          }
+          
           if (state.transactions.length === 0) {
             console.log('ℹ️ [STORE] No transactions to migrate');
             return;
@@ -346,7 +370,11 @@ export const useTransactionStore = create<TransactionStore>()(
             return;
           }
 
-          // Reload from Supabase after migration
+          // Clear localStorage to prevent duplicate migration
+          localStorage.removeItem('transaction-storage');
+          console.log('🗑️ [STORE] Cleared localStorage after migration');
+
+          // Switch to Supabase and reload
           await get().loadTransactionsFromSupabase();
           console.log('✅ [STORE] Migration completed successfully');
         } catch (error) {
