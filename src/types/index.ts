@@ -7,6 +7,8 @@ export interface Transaction {
   category: string;
   description: string;
   date: string;
+  created_at?: string;
+  updated_at?: string;
 }
 export interface CategoryTotal {
   category: string;

@@ -48,18 +48,20 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     }
   };
 
-  // Sort transactions
-  const sortedTransactions = [...transactions].sort((a, b) => {
-    let comparison = 0;
-    
-    if (sortField === 'date') {
-      comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
-    } else if (sortField === 'amount') {
-      comparison = a.amount - b.amount;
-    }
-    
-    return sortDirection === 'asc' ? comparison : -comparison;
-  });
+  // Sort transactions - but skip sorting if "last-transactions" is selected (already sorted by timestamp)
+  const sortedTransactions = selectedTimeRange === 'last-transactions' 
+    ? transactions // Use transactions as-is (already sorted by timestamp in parent)
+    : [...transactions].sort((a, b) => {
+        let comparison = 0;
+        
+        if (sortField === 'date') {
+          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+        } else if (sortField === 'amount') {
+          comparison = a.amount - b.amount;
+        }
+        
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
 
   // Pagination logic - only for non-compact mode
   const totalPages = compact ? 1 : Math.ceil(sortedTransactions.length / itemsPerPage);
@@ -125,9 +127,9 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     navigate(`/edit-transaction/${transaction.id}`);
   };
 
-  const handleDelete = (transactionId: string) => {
+  const handleDelete = async (transactionId: string) => {
     if (window.confirm('Are you sure you want to delete this transaction?')) {
-      deleteTransaction(transactionId);
+      await deleteTransaction(transactionId);
       setOpenDropdown(null);
     }
   };
@@ -333,27 +335,27 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         <table className="w-full text-left">
           <thead className="sticky top-0 bg-background z-10">
             <tr className="border-b border-border text-gray-400 text-xs">
-              <th className="pb-2 font-normal w-20 text-center">Type</th>
+              <th className="pb-2 font-normal w-16 text-center">Type</th>
               <th 
-                className="pb-2 font-normal w-28 cursor-pointer hover:text-white transition-colors"
-                onClick={() => handleSort('date')}
+                className={`pb-2 font-normal w-32 ${selectedTimeRange === 'last-transactions' ? 'cursor-default' : 'cursor-pointer hover:text-white transition-colors'}`}
+                onClick={selectedTimeRange === 'last-transactions' ? undefined : () => handleSort('date')}
               >
                 <div className="flex items-center gap-1">
                   Date
-                  {sortField === 'date' && (
+                  {selectedTimeRange !== 'last-transactions' && sortField === 'date' && (
                     sortDirection === 'desc' ? <ChevronDownIcon size={14} /> : <ChevronUpIcon size={14} />
                   )}
                 </div>
               </th>
-              <th className="pb-2 font-normal w-40 text-center">Category</th>
-              <th className="pb-2 font-normal">Description</th>
+              <th className="pb-2 font-normal w-48 text-center">Category</th>
+              <th className="pb-2 font-normal w-80 pl-8">Description</th>
               <th 
-                className="pb-2 font-normal text-right w-28 cursor-pointer hover:text-white transition-colors"
-                onClick={() => handleSort('amount')}
+                className={`pb-2 font-normal text-right w-32 ${selectedTimeRange === 'last-transactions' ? 'cursor-default' : 'cursor-pointer hover:text-white transition-colors'}`}
+                onClick={selectedTimeRange === 'last-transactions' ? undefined : () => handleSort('amount')}
               >
                 <div className="flex items-center justify-end gap-1">
                   Amount
-                  {sortField === 'amount' && (
+                  {selectedTimeRange !== 'last-transactions' && sortField === 'amount' && (
                     sortDirection === 'desc' ? <ChevronDownIcon size={14} /> : <ChevronUpIcon size={14} />
                   )}
                 </div>
@@ -363,7 +365,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           </thead>
         <tbody className="font-mono">
           {paginatedTransactions.map(transaction => <tr key={transaction.id} className="border-b border-border hover:bg-border/30 transition-colors">
-              <td className="py-3 text-center">
+              <td className="py-3 text-center w-16">
                 {transaction.type === 'income' ? <div className="flex items-center justify-center">
                     <span className="bg-income/10 p-1 rounded">
                       <ArrowUpRightIcon size={16} className="text-income" />
@@ -378,20 +380,20 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     </span>
                   </div>}
               </td>
-              <td className="py-3 text-xs px-2">
+              <td className="py-3 text-xs px-2 w-32">
                 {compact ? formatShortDate(transaction.date) : formatDate(transaction.date)}
               </td>
-              <td className="py-3 text-xs text-center px-2">
+              <td className="py-3 text-xs text-center px-2 w-48">
                 <span className="bg-surface px-2 py-1 rounded text-xs">
                   {transaction.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </span>
               </td>
-              <td className="py-3 text-xs">{transaction.description}</td>
-              <td className={`py-3 text-right text-xs ${transaction.type === 'income' ? 'text-income' : transaction.type === 'expense' ? 'text-expense' : 'text-highlight'}`}>
+              <td className="py-3 text-xs w-80 pl-8">{transaction.description}</td>
+              <td className={`py-3 text-right text-xs w-32 ${transaction.type === 'income' ? 'text-income' : transaction.type === 'expense' ? 'text-expense' : 'text-highlight'}`}>
                 {transaction.type === 'income' ? '+' : transaction.type === 'expense' ? '-' : '→'}
                 {formatCurrency(transaction.amount, transaction.currency)}
               </td>
-              {!compact && <td className="py-3 text-center">
+              {!compact && <td className="py-3 text-center w-20">
                 <div className="relative">
                   <button
                     onClick={() => toggleDropdown(transaction.id)}

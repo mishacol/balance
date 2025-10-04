@@ -57,7 +57,7 @@ export const TransactionForm: React.FC = () => {
     }
   }, [existingTransaction, reset]);
 
-  const onSubmit = (data: TransactionFormData) => {
+  const onSubmit = async (data: TransactionFormData) => {
     // 🚨 DEBUG: Log transaction data before saving
     console.log(`💾 [FORM] Submitting transaction:`, {
       originalData: data,
@@ -67,9 +67,15 @@ export const TransactionForm: React.FC = () => {
     });
     
     if (isEditing && existingTransaction) {
-      updateTransaction(existingTransaction.id, data);
+      await updateTransaction(existingTransaction.id, {
+        ...data,
+        description: data.description || ''
+      });
     } else {
-      addTransaction(data);
+      addTransaction({
+        ...data,
+        description: data.description || ''
+      });
     }
     navigate('/transactions');
   };
@@ -298,7 +304,6 @@ export const TransactionForm: React.FC = () => {
             { value: 'furniture-appliances', label: 'Furniture & Appliances' },
             { value: 'home-insurance', label: 'Home Insurance' },
             { value: 'maintenance-repairs', label: 'Maintenance & Repairs' },
-            { value: 'building-maintenance', label: 'Building Maintenance' },
             { value: 'property-tax', label: 'Property Tax' },
             { value: 'rent', label: 'Rent' },
             { value: 'mortgage', label: 'Mortgage' },
@@ -328,9 +333,14 @@ export const TransactionForm: React.FC = () => {
             { value: 'cosmetics-skincare', label: 'Cosmetics/Skincare' },
             { value: 'haircuts-salon', label: 'Haircuts/Salon' },
             { value: 'laundry-dry-cleaning', label: 'Laundry/Dry Cleaning' },
-            { value: 'shoes', label: 'Shoes' },
-            { value: 'spa-massage', label: 'Spa/Massage' },
-            { value: 'clothing', label: 'Clothing' }
+            { value: 'spa-massage', label: 'Spa/Massage' }
+          ]
+        },
+        {
+          label: 'Clothing & Footwear',
+          options: [
+            { value: 'clothing', label: 'Clothing' },
+            { value: 'shoes', label: 'Shoes' }
           ]
         },
         {
@@ -362,14 +372,24 @@ export const TransactionForm: React.FC = () => {
         {
           label: 'Utilities',
           options: [
-            { value: 'cable-streaming', label: 'Cable/Streaming' },
             { value: 'electricity', label: 'Electricity' },
             { value: 'gas', label: 'Gas' },
             { value: 'heating', label: 'Heating' },
-            { value: 'internet', label: 'Internet' },
-            { value: 'phone', label: 'Phone' },
             { value: 'trash-recycling', label: 'Trash/Recycling' },
-            { value: 'water-sewer', label: 'Water & Sewer' }
+            { value: 'water-sewer', label: 'Water & Sewer' },
+            { value: 'building-maintenance', label: 'Building Maintenance' },
+            { value: 'apartment-intercom', label: 'Apartment Intercom' },
+            { value: 'building-cleaning', label: 'Building Cleaning' }
+          ]
+        },
+        {
+          label: 'Telecommunications',
+          options: [
+            { value: 'mobile-phone', label: 'Mobile Phone' },
+            { value: 'landline-phone', label: 'Landline Phone' },
+            { value: 'voip', label: 'VoIP' },
+            { value: 'cable-satellite-tv', label: 'Cable/Satellite TV' },
+            { value: 'internet', label: 'Internet' }
           ]
         }
       ];

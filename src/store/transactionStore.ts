@@ -13,8 +13,8 @@ interface TransactionStore {
   setBaseCurrency: (currency: string) => void;
   setMonthlyIncomeTarget: (target: number) => void;
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
-  updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
-  deleteTransaction: (id: string) => void;
+  updateTransaction: (id: string, transaction: Partial<Transaction>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
   getTransactionsByType: (type: 'income' | 'expense') => Transaction[];
   getTransactionsByCategory: (category: string) => Transaction[];
   getTransactionsByDateRange: (startDate: string, endDate: string) => Transaction[];
@@ -34,6 +34,8 @@ interface TransactionStore {
   migrateFromLocalStorage: () => Promise<void>;
   switchToSupabase: () => void;
   loadUserProfile: () => Promise<void>;
+  // Cleanup methods
+  removeDuplicates: () => void;
 }
 
 export const useTransactionStore = create<TransactionStore>()(
@@ -90,28 +92,76 @@ export const useTransactionStore = create<TransactionStore>()(
         }
       },
 
-      updateTransaction: (id, updatedTransaction) => {
-        set((state) => {
-          const newTransactions = state.transactions.map((transaction) =>
-            transaction.id === id
-              ? { ...transaction, ...updatedTransaction }
-              : transaction
-          );
-          // Manual mode: NO automatic backups - user must create backups manually
-          // Automatic mode: backups are handled by the timer in useAutoBackup hook
-          return { transactions: newTransactions };
-        });
+      updateTransaction: async (id, updatedTransaction) => {
+        const state = get();
+        
+        if (state.isUsingSupabase) {
+          try {
+            const { error } = await supabaseService.updateTransaction(id, updatedTransaction);
+            if (error) throw error;
+            
+            // Reload transactions from Supabase to get the updated data
+            await get().loadTransactionsFromSupabase();
+          } catch (error) {
+            console.error('Failed to update transaction in Supabase:', error);
+            // Fallback to local update
+            set((state) => {
+              const newTransactions = state.transactions.map((transaction) =>
+                transaction.id === id
+                  ? { ...transaction, ...updatedTransaction }
+                  : transaction
+              );
+              return { transactions: newTransactions };
+            });
+          }
+        } else {
+          // Local storage update
+          set((state) => {
+            const newTransactions = state.transactions.map((transaction) =>
+              transaction.id === id
+                ? { ...transaction, ...updatedTransaction }
+                : transaction
+            );
+            return { transactions: newTransactions };
+          });
+        }
       },
 
-      deleteTransaction: (id) => {
-        set((state) => {
-          const newTransactions = state.transactions.filter(
-            (transaction) => transaction.id !== id
-          );
-          // Manual mode: NO automatic backups - user must create backups manually
-          // Automatic mode: backups are handled by the timer in useAutoBackup hook
-          return { transactions: newTransactions };
-        });
+      deleteTransaction: async (id) => {
+        const state = get();
+        
+        console.log(`🗑️ [STORE] Attempting to delete transaction:`, id);
+        
+        if (state.isUsingSupabase) {
+          try {
+            console.log(`🗑️ [STORE] Deleting from Supabase...`);
+            const { error } = await supabaseService.deleteTransaction(id);
+            if (error) throw error;
+            
+            console.log(`✅ [STORE] Successfully deleted from Supabase, reloading...`);
+            // Reload transactions from Supabase to get the updated data
+            await get().loadTransactionsFromSupabase();
+            console.log(`✅ [STORE] Delete completed successfully`);
+          } catch (error) {
+            console.error('❌ [STORE] Failed to delete transaction from Supabase:', error);
+            // Fallback to local delete
+            set((state) => {
+              const newTransactions = state.transactions.filter(
+                (transaction) => transaction.id !== id
+              );
+              return { transactions: newTransactions };
+            });
+          }
+        } else {
+          console.log(`🗑️ [STORE] Deleting from localStorage...`);
+          // Local storage delete
+          set((state) => {
+            const newTransactions = state.transactions.filter(
+              (transaction) => transaction.id !== id
+            );
+            return { transactions: newTransactions };
+          });
+        }
       },
 
       getTransactionsByType: (type) => {
@@ -362,8 +412,34 @@ export const useTransactionStore = create<TransactionStore>()(
             console.log(`🔍 [STORE] AFTER RELOAD August 2013:`, augustAfterReload.map(t => ({ id: t.id, date: t.date })));
           }
           
-          set({ transactions });
-          console.log(`✅ [STORE] Loaded ${transactions.length} transactions from Supabase`);
+          // 🚨 DUPLICATE PREVENTION: Remove duplicates based on ID
+          const uniqueTransactions = transactions.filter((transaction, index, self) => 
+            index === self.findIndex(t => t.id === transaction.id)
+          );
+          
+          // 🚨 DEBUG: Check Mobile Phone transactions specifically
+          const mobilePhoneTransactions = uniqueTransactions.filter(t => 
+            t.category === 'mobile-phone' || 
+            t.category === 'Mobile Phone' ||
+            t.description?.toLowerCase().includes('mobile') ||
+            t.description?.toLowerCase().includes('phone')
+          );
+          if (mobilePhoneTransactions.length > 0) {
+            console.log(`🔍 [STORE] Mobile Phone transactions loaded:`, mobilePhoneTransactions.map(t => ({ 
+              id: t.id, 
+              date: t.date, 
+              amount: t.amount, 
+              category: t.category,
+              description: t.description 
+            })));
+          }
+          
+          if (uniqueTransactions.length !== transactions.length) {
+            console.log(`🚨 [STORE] Removed ${transactions.length - uniqueTransactions.length} duplicate transactions`);
+          }
+          
+          set({ transactions: uniqueTransactions });
+          console.log(`✅ [STORE] Loaded ${uniqueTransactions.length} unique transactions from Supabase`);
         } catch (error) {
           console.error('❌ [STORE] Failed to load transactions from Supabase:', error);
         }
@@ -411,7 +487,7 @@ export const useTransactionStore = create<TransactionStore>()(
 
       loadUserProfile: async () => {
         try {
-          const userId = await supabaseService.getCurrentUserId();
+          const userId = await supabaseService.getUserId();
           if (!userId) {
             console.log('ℹ️ [STORE] No user ID, skipping profile load');
             return;
@@ -438,6 +514,23 @@ export const useTransactionStore = create<TransactionStore>()(
           }
         } catch (error) {
           console.error('❌ [STORE] Failed to load user profile:', error);
+        }
+      },
+
+      removeDuplicates: () => {
+        const state = get();
+        const originalCount = state.transactions.length;
+        
+        // Remove duplicates based on ID
+        const uniqueTransactions = state.transactions.filter((transaction, index, self) => 
+          index === self.findIndex(t => t.id === transaction.id)
+        );
+        
+        if (uniqueTransactions.length !== originalCount) {
+          console.log(`🚨 [STORE] Removing ${originalCount - uniqueTransactions.length} duplicate transactions`);
+          set({ transactions: uniqueTransactions });
+        } else {
+          console.log('✅ [STORE] No duplicates found');
         }
       },
     })

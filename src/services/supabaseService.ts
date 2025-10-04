@@ -18,6 +18,10 @@ export class SupabaseService {
     return session?.user?.id || null;
   }
 
+  async getUserId(): Promise<string | null> {
+    return this.getCurrentUserId();
+  }
+
   // Authentication methods
   async signUp(email: string, password: string, username?: string) {
     try {
@@ -412,6 +416,8 @@ export class SupabaseService {
         category: row.category,
         description: row.description,
         date: row.date,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
       }));
 
       // 🚨 DEBUG: Check downloaded dates for corruption

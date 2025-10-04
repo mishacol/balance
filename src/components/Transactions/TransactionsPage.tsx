@@ -10,7 +10,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 export const TransactionsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { transactions } = useTransactionStore();
+  const { transactions, removeDuplicates } = useTransactionStore();
   
   // Persistent filter state - loads from localStorage on mount
   const [searchQuery, setSearchQuery] = useState(() => {
@@ -148,6 +148,11 @@ export const TransactionsPage: React.FC = () => {
         case 'this-year':
           dateMatches = transactionYear === currentYear;
           break;
+        case 'last-transactions':
+          // For "last transactions", we'll sort by creation/update time instead of date filtering
+          // This case will be handled differently - we'll return true here and sort later
+          dateMatches = true;
+          break;
         case 'custom':
           if (customStartDate && customEndDate) {
             // Normalize dates to only compare date parts (remove time components)
@@ -211,12 +216,14 @@ export const TransactionsPage: React.FC = () => {
           'financial-obligations': ['bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes'],
           'food-dining': ['alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
           'healthcare': ['dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy'],
-          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'building-maintenance', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
+          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
           'miscellaneous': ['cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping'],
-          'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'shoes', 'spa-massage', 'clothing', 'personal-hygiene'],
+          'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'spa-massage', 'personal-hygiene'],
+          'clothing-footwear': ['clothing', 'shoes'],
           'pets': ['grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary'],
           'transportation': ['car-insurance', 'car-payment', 'gas-fuel', 'interurban-travel', 'international-travel', 'maintenance-repairs', 'parking', 'public-transit', 'rideshare-taxi', 'tolls', 'vehicle-registration'],
-          'utilities': ['cable-streaming', 'electricity', 'gas', 'heating', 'internet', 'phone', 'trash-recycling', 'water-sewer']
+          'utilities': ['electricity', 'gas', 'heating', 'trash-recycling', 'water-sewer', 'building-maintenance', 'apartment-intercom', 'building-cleaning'],
+          'telecommunications': ['mobile-phone', 'landline-phone', 'voip', 'cable-satellite-tv', 'internet'],
         };
         
         if (categoryGroups[categoryFilter]) {
@@ -227,7 +234,27 @@ export const TransactionsPage: React.FC = () => {
       
       return matchesSearch && matchesType && matchesCategory;
     })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .sort((a, b) => {
+      if (selectedTimeRange === 'last-transactions') {
+        // Sort by record time (created_at or updated_at) - most recent first
+        const aTime = a.updated_at || a.created_at || a.id;
+        const bTime = b.updated_at || b.created_at || b.id;
+        
+        // Convert to timestamps for comparison
+        const aTimestamp = new Date(aTime).getTime();
+        const bTimestamp = new Date(bTime).getTime();
+        
+        return bTimestamp - aTimestamp; // Most recent first
+      } else {
+        // Sort by transaction date - more recent dates first
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      }
+    });
+
+  // Apply limit for "last-transactions" view
+  const finalFilteredTransactions = selectedTimeRange === 'last-transactions' 
+    ? filteredTransactions.slice(0, 50) // Show only the 50 most recent transactions
+    : filteredTransactions;
 
   // Category options for react-select
   const getCategoryOptions = () => {
@@ -240,20 +267,22 @@ export const TransactionsPage: React.FC = () => {
     ];
 
     const expenseParentCategories = [
+      { value: 'food-dining', label: 'Food & Dining' },
+      { value: 'housing', label: 'Housing' },
+      { value: 'utilities', label: 'Utilities' },
+      { value: 'telecommunications', label: 'Telecommunications' },
+      { value: 'transportation', label: 'Transportation' },
+      { value: 'healthcare', label: 'Healthcare' },
+      { value: 'clothing-footwear', label: 'Clothing & Footwear' },
+      { value: 'personal-care', label: 'Personal Care' },
+      { value: 'entertainment', label: 'Entertainment' },
+      { value: 'education', label: 'Education' },
       { value: 'business-expenses', label: 'Business Expenses' },
+      { value: 'financial-obligations', label: 'Financial Obligations' },
+      { value: 'pets', label: 'Pets' },
       { value: 'charitable-gifts', label: 'Charitable & Gifts' },
       { value: 'childcare', label: 'Childcare' },
-      { value: 'education', label: 'Education' },
-      { value: 'entertainment', label: 'Entertainment' },
-      { value: 'financial-obligations', label: 'Financial Obligations' },
-      { value: 'food-dining', label: 'Food & Dining' },
-      { value: 'healthcare', label: 'Healthcare' },
-      { value: 'housing', label: 'Housing' },
-      { value: 'miscellaneous', label: 'Miscellaneous' },
-      { value: 'personal-care', label: 'Personal Care' },
-      { value: 'pets', label: 'Pets' },
-      { value: 'transportation', label: 'Transportation' },
-      { value: 'utilities', label: 'Utilities' }
+      { value: 'miscellaneous', label: 'Miscellaneous' }
     ];
 
     // Define all subcategories (only the actual subcategories, not parent categories)
@@ -349,7 +378,6 @@ export const TransactionsPage: React.FC = () => {
       { value: 'furniture-appliances', label: 'Furniture & Appliances' },
       { value: 'home-insurance', label: 'Home Insurance' },
       { value: 'maintenance-repairs', label: 'Maintenance & Repairs' },
-      { value: 'building-maintenance', label: 'Building Maintenance' },
       { value: 'property-tax', label: 'Property Tax' },
       { value: 'rent', label: 'Rent' },
       { value: 'mortgage', label: 'Mortgage' },
@@ -386,14 +414,19 @@ export const TransactionsPage: React.FC = () => {
       { value: 'rideshare-taxi', label: 'Rideshare/Taxi' },
       { value: 'tolls', label: 'Tolls' },
       { value: 'vehicle-registration', label: 'Vehicle Registration' },
-      { value: 'cable-streaming', label: 'Cable/Streaming' },
       { value: 'electricity', label: 'Electricity' },
       { value: 'gas', label: 'Gas' },
       { value: 'heating', label: 'Heating' },
+      { value: 'mobile-phone', label: 'Mobile Phone' },
+      { value: 'landline-phone', label: 'Landline Phone' },
+      { value: 'voip', label: 'VoIP' },
+      { value: 'cable-satellite-tv', label: 'Cable/Satellite TV' },
       { value: 'internet', label: 'Internet' },
-      { value: 'phone', label: 'Phone' },
       { value: 'trash-recycling', label: 'Trash/Recycling' },
       { value: 'water-sewer', label: 'Water & Sewer' },
+      { value: 'building-maintenance', label: 'Building Maintenance' },
+      { value: 'apartment-intercom', label: 'Apartment Intercom' },
+      { value: 'building-cleaning', label: 'Building Cleaning' },
       
       // Investment subcategories
       { value: 'savings-account', label: 'Savings Account' },
@@ -445,12 +478,14 @@ export const TransactionsPage: React.FC = () => {
           'financial-obligations': ['bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes'],
           'food-dining': ['alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
           'healthcare': ['dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy'],
-          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'building-maintenance', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
+          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
           'miscellaneous': ['cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping'],
-          'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'shoes', 'spa-massage', 'clothing', 'personal-hygiene'],
+          'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'spa-massage', 'personal-hygiene'],
+          'clothing-footwear': ['clothing', 'shoes'],
           'pets': ['grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary'],
           'transportation': ['car-insurance', 'car-payment', 'gas-fuel', 'interurban-travel', 'international-travel', 'maintenance-repairs', 'parking', 'public-transit', 'rideshare-taxi', 'tolls', 'vehicle-registration'],
-          'utilities': ['cable-streaming', 'electricity', 'gas', 'heating', 'internet', 'phone', 'trash-recycling', 'water-sewer']
+          'utilities': ['electricity', 'gas', 'heating', 'trash-recycling', 'water-sewer', 'building-maintenance', 'apartment-intercom', 'building-cleaning'],
+          'telecommunications': ['mobile-phone', 'landline-phone', 'voip', 'cable-satellite-tv', 'internet'],
         };
         
         const subcategoryValues = categoryGroups[category.value] || [];
@@ -490,12 +525,14 @@ export const TransactionsPage: React.FC = () => {
           'financial-obligations': ['bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes'],
           'food-dining': ['alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
           'healthcare': ['dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy'],
-          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'building-maintenance', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
+          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
           'miscellaneous': ['cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping'],
-          'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'shoes', 'spa-massage', 'clothing', 'personal-hygiene'],
+          'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'spa-massage', 'personal-hygiene'],
+          'clothing-footwear': ['clothing', 'shoes'],
           'pets': ['grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary'],
           'transportation': ['car-insurance', 'car-payment', 'gas-fuel', 'interurban-travel', 'international-travel', 'maintenance-repairs', 'parking', 'public-transit', 'rideshare-taxi', 'tolls', 'vehicle-registration'],
-          'utilities': ['cable-streaming', 'electricity', 'gas', 'heating', 'internet', 'phone', 'trash-recycling', 'water-sewer']
+          'utilities': ['electricity', 'gas', 'heating', 'trash-recycling', 'water-sewer', 'building-maintenance', 'apartment-intercom', 'building-cleaning'],
+          'telecommunications': ['mobile-phone', 'landline-phone', 'voip', 'cable-satellite-tv', 'internet'],
         };
         
         const subcategoryValues = categoryGroups[category.value] || [];
@@ -524,16 +561,16 @@ export const TransactionsPage: React.FC = () => {
       const expenseSubs = allSubcategories.filter(sub => {
         const expenseSubs = ['business-travel', 'equipment', 'marketing-advertising', 'office-supplies', 'professional-fees', 'software-subscriptions',
           'charitable-subscriptions', 'donations', 'gifts', 'charity', 'babysitting', 'child-support', 'daycare', 'kids-activities', 'school-supplies', 'toys-games',
-          'books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition', 'books-magazines', 'games-apps', 'hobbies', 'music-streaming', 'sports-recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs',
+          'books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition',
           'bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes',
           'alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants',
           'dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy',
-          'furniture-appliances', 'home-insurance', 'maintenance-repairs', 'building-maintenance', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods',
+          'furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods',
           'cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping',
-          'cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'shoes', 'spa-massage', 'clothing', 'personal-hygiene',
+          'cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'spa-massage', 'personal-hygiene',
           'grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary',
           'car-insurance', 'car-payment', 'gas-fuel', 'interurban-travel', 'international-travel', 'maintenance-repairs', 'parking', 'public-transit', 'rideshare-taxi', 'tolls', 'vehicle-registration',
-          'cable-streaming', 'electricity', 'gas', 'heating', 'internet', 'phone', 'trash-recycling', 'water-sewer'];
+          'electricity', 'gas', 'heating', 'trash-recycling', 'water-sewer', 'building-maintenance', 'apartment-intercom', 'building-cleaning'];
         return expenseSubs.includes(sub.value);
       });
       return createFlatOptions(expenseParentCategories, expenseSubs);
@@ -580,8 +617,8 @@ export const TransactionsPage: React.FC = () => {
     doc.text(`Filter: ${filterText}`, 20, 40);
     
     // Add summary
-    const totalTransactions = filteredTransactions.length;
-    const totalAmount = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
+    const totalTransactions = finalFilteredTransactions.length;
+    const totalAmount = finalFilteredTransactions.reduce((sum, t) => sum + t.amount, 0);
     doc.text(`Total Transactions: ${totalTransactions}`, 20, 50);
     doc.text(`Total Amount: $${totalAmount.toFixed(2)}`, 20, 60);
     
@@ -598,7 +635,7 @@ export const TransactionsPage: React.FC = () => {
     yPosition += 10;
     
     // Add transactions (all transactions, not just first 50)
-    filteredTransactions.forEach((transaction, index) => {
+    finalFilteredTransactions.forEach((transaction, index) => {
       if (yPosition > 280) {
         doc.addPage();
         yPosition = 20;
@@ -796,16 +833,17 @@ export const TransactionsPage: React.FC = () => {
               <option value="this-month">This Month</option>
               <option value="last-month">Last Month</option>
               <option value="this-year">This Year</option>
+              <option value="last-transactions">Last Transactions</option>
               <option value="custom">Custom Range</option>
             </select>
                 
-                <Button 
-                  variant="secondary" 
-                  onClick={resetFilters}
-                  className="text-sm px-3 py-2"
-                >
-                  Reset All Filters
-                </Button>
+        <Button 
+          variant="secondary" 
+          onClick={resetFilters}
+          className="text-sm px-3 py-2"
+        >
+          Reset All Filters
+        </Button>
             </div>
           </div>
         </div>
@@ -864,7 +902,7 @@ export const TransactionsPage: React.FC = () => {
         )}
         
         <TransactionList 
-          transactions={filteredTransactions} 
+          transactions={finalFilteredTransactions} 
           typeFilter={typeFilter}
           categoryFilter={categoryFilter}
           selectedTimeRange={selectedTimeRange}
