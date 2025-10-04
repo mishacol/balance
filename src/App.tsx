@@ -8,7 +8,7 @@ import './utils/clearStorage'; // Auto-clear corrupted storage
 
 export function App() {
   const { loading, isAuthenticated } = useAuth();
-  const { switchToSupabase, loadTransactionsFromSupabase, migrateFromLocalStorage } = useTransactionStore();
+  const { switchToSupabase, loadTransactionsFromSupabase, migrateFromLocalStorage, loadUserProfile } = useTransactionStore();
   
   // Initialize automatic backup system
   useAutoBackup();
@@ -21,6 +21,11 @@ export function App() {
       // First, switch to Supabase flag
       switchToSupabase();
       
+      // Load user profile settings (base currency, backup mode, etc.)
+      loadUserProfile().catch(error => {
+        console.error('Failed to load user profile:', error);
+      });
+      
       // Load user data from Supabase
       loadTransactionsFromSupabase().catch(error => {
         console.error('Failed to load transactions from Supabase:', error);
@@ -31,7 +36,7 @@ export function App() {
         console.error('Migration failed:', error);
       });
     }
-  }, [isAuthenticated, loading, switchToSupabase, loadTransactionsFromSupabase, migrateFromLocalStorage]);
+  }, [isAuthenticated, loading, switchToSupabase, loadTransactionsFromSupabase, migrateFromLocalStorage, loadUserProfile]);
 
   if (loading) {
     return (

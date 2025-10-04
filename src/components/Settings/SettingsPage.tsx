@@ -2,9 +2,12 @@ import React from 'react';
 import { Card } from '../ui/Card';
 import { SettingsIcon, DollarSignIcon, ShieldIcon } from 'lucide-react';
 import { useTransactionStore } from '../../store/transactionStore';
+import { useAuth } from '../../hooks/useAuth';
+import { supabaseService } from '../../services/supabaseService';
 
 export const SettingsPage: React.FC = () => {
   const { backupMode, setBackupMode, baseCurrency, setBaseCurrency, monthlyIncomeTarget, setMonthlyIncomeTarget } = useTransactionStore();
+  const { user } = useAuth();
 
   const currencies = [
     { code: 'AOA', name: 'Angolan Kwanza', symbol: 'Kz' },
@@ -102,16 +105,49 @@ export const SettingsPage: React.FC = () => {
     { code: 'ZMW', name: 'Zambian Kwacha', symbol: 'ZK' }
   ];
 
-  const handleCurrencyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setBaseCurrency(event.target.value);
+  const handleCurrencyChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCurrency = event.target.value;
+    setBaseCurrency(newCurrency);
+    
+    // Save to Supabase profile
+    if (user) {
+      try {
+        await supabaseService.updateUserProfile(user.id, { base_currency: newCurrency });
+        console.log('✅ [SETTINGS] Base currency saved to Supabase:', newCurrency);
+      } catch (error) {
+        console.error('❌ [SETTINGS] Failed to save base currency:', error);
+      }
+    }
   };
 
-  const handleBackupModeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setBackupMode(event.target.value as 'manual' | 'automatic');
+  const handleBackupModeChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newMode = event.target.value as 'manual' | 'automatic';
+    setBackupMode(newMode);
+    
+    // Save to Supabase profile
+    if (user) {
+      try {
+        await supabaseService.updateUserProfile(user.id, { backup_mode: newMode });
+        console.log('✅ [SETTINGS] Backup mode saved to Supabase:', newMode);
+      } catch (error) {
+        console.error('❌ [SETTINGS] Failed to save backup mode:', error);
+      }
+    }
   };
 
-  const handleMonthlyTargetChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setMonthlyIncomeTarget(parseFloat(event.target.value) || 0);
+  const handleMonthlyTargetChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newTarget = parseFloat(event.target.value) || 0;
+    setMonthlyIncomeTarget(newTarget);
+    
+    // Save to Supabase profile
+    if (user) {
+      try {
+        await supabaseService.updateUserProfile(user.id, { monthly_income_target: newTarget });
+        console.log('✅ [SETTINGS] Monthly income target saved to Supabase:', newTarget);
+      } catch (error) {
+        console.error('❌ [SETTINGS] Failed to save monthly income target:', error);
+      }
+    }
   };
 
   return (

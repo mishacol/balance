@@ -33,6 +33,7 @@ interface TransactionStore {
   loadTransactionsFromSupabase: () => Promise<void>;
   migrateFromLocalStorage: () => Promise<void>;
   switchToSupabase: () => void;
+  loadUserProfile: () => Promise<void>;
 }
 
 export const useTransactionStore = create<TransactionStore>()(
@@ -407,5 +408,37 @@ export const useTransactionStore = create<TransactionStore>()(
         set({ isUsingSupabase: true });
         console.log('🔄 [STORE] Switched to Supabase storage');
       },
+
+      loadUserProfile: async () => {
+        try {
+          const userId = await supabaseService.getCurrentUserId();
+          if (!userId) {
+            console.log('ℹ️ [STORE] No user ID, skipping profile load');
+            return;
+          }
+
+          const { data: profile, error } = await supabaseService.getUserProfile(userId);
+          if (error) {
+            console.error('❌ [STORE] Failed to load user profile:', error);
+            return;
+          }
+
+          if (profile) {
+            console.log('✅ [STORE] Loaded user profile:', profile);
+            set({
+              baseCurrency: profile.base_currency || 'EUR',
+              backupMode: profile.backup_mode || 'manual',
+              monthlyIncomeTarget: profile.monthly_income_target || 0,
+            });
+            console.log('✅ [STORE] Updated store with profile settings:', {
+              baseCurrency: profile.base_currency || 'EUR',
+              backupMode: profile.backup_mode || 'manual',
+              monthlyIncomeTarget: profile.monthly_income_target || 0,
+            });
+          }
+        } catch (error) {
+          console.error('❌ [STORE] Failed to load user profile:', error);
+        }
+      },
     })
-);
+  );

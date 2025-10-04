@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
 import { TransactionList } from './TransactionList';
@@ -11,12 +11,79 @@ import 'react-datepicker/dist/react-datepicker.css';
 export const TransactionsPage: React.FC = () => {
   const navigate = useNavigate();
   const { transactions } = useTransactionStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [selectedTimeRange, setSelectedTimeRange] = useState('this-month');
-  const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
-  const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
+  
+  // Persistent filter state - loads from localStorage on mount
+  const [searchQuery, setSearchQuery] = useState(() => {
+    return localStorage.getItem('transactions-search-query') || '';
+  });
+  const [typeFilter, setTypeFilter] = useState(() => {
+    return localStorage.getItem('transactions-type-filter') || '';
+  });
+  const [categoryFilter, setCategoryFilter] = useState(() => {
+    return localStorage.getItem('transactions-category-filter') || '';
+  });
+  const [selectedTimeRange, setSelectedTimeRange] = useState(() => {
+    return localStorage.getItem('transactions-time-range') || 'this-month';
+  });
+  const [customStartDate, setCustomStartDate] = useState<Date | null>(() => {
+    const saved = localStorage.getItem('transactions-custom-start-date');
+    return saved ? new Date(saved) : null;
+  });
+  const [customEndDate, setCustomEndDate] = useState<Date | null>(() => {
+    const saved = localStorage.getItem('transactions-custom-end-date');
+    return saved ? new Date(saved) : null;
+  });
+
+  // Save filter state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('transactions-search-query', searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    localStorage.setItem('transactions-type-filter', typeFilter);
+  }, [typeFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('transactions-category-filter', categoryFilter);
+  }, [categoryFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('transactions-time-range', selectedTimeRange);
+  }, [selectedTimeRange]);
+
+  useEffect(() => {
+    if (customStartDate) {
+      localStorage.setItem('transactions-custom-start-date', customStartDate.toISOString());
+    } else {
+      localStorage.removeItem('transactions-custom-start-date');
+    }
+  }, [customStartDate]);
+
+  useEffect(() => {
+    if (customEndDate) {
+      localStorage.setItem('transactions-custom-end-date', customEndDate.toISOString());
+    } else {
+      localStorage.removeItem('transactions-custom-end-date');
+    }
+  }, [customEndDate]);
+
+  // Manual reset function - only resets when user explicitly chooses
+  const resetFilters = () => {
+    setSearchQuery('');
+    setTypeFilter('');
+    setCategoryFilter('');
+    setSelectedTimeRange('this-month');
+    setCustomStartDate(null);
+    setCustomEndDate(null);
+    
+    // Clear localStorage
+    localStorage.removeItem('transactions-search-query');
+    localStorage.removeItem('transactions-type-filter');
+    localStorage.removeItem('transactions-category-filter');
+    localStorage.removeItem('transactions-time-range');
+    localStorage.removeItem('transactions-custom-start-date');
+    localStorage.removeItem('transactions-custom-end-date');
+  };
 
   // Function to determine type from category
   const getTypeFromCategory = (category: string) => {
@@ -33,7 +100,7 @@ export const TransactionsPage: React.FC = () => {
       // Government & Benefits
       'grants-subsidies', 'pension', 'social-security', 'tax-refund', 'unemployment-benefits',
       // Other Income
-      'gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other'
+      'gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other-income'
     ];
     
     // Check if it's a parent category (contains '-')
@@ -104,10 +171,11 @@ export const TransactionsPage: React.FC = () => {
         return false;
       }
       
-      // Category filtering
+      // Category filtering - must match both category and type
       if (categoryFilter && transaction.category !== categoryFilter) {
         return false;
       }
+      
       
       return true;
     });
@@ -132,7 +200,7 @@ export const TransactionsPage: React.FC = () => {
           'investment-income': ['capital-gains', 'crypto-gains', 'dividends', 'interest', 'rental-income'],
           'passive-income': ['ad-revenue', 'automated-business', 'licensing-fees', 'subscription-revenue'],
           'government-benefits': ['grants-subsidies', 'pension', 'social-security', 'tax-refund', 'unemployment-benefits'],
-          'other-income': ['gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other'],
+          'other-income': ['gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other-income'],
           
           // Expense groups
           'business-expenses': ['business-travel', 'equipment', 'marketing-advertising', 'office-supplies', 'professional-fees', 'software-subscriptions'],
@@ -154,6 +222,7 @@ export const TransactionsPage: React.FC = () => {
         if (categoryGroups[categoryFilter]) {
           matchesCategory = categoryGroups[categoryFilter].includes(transaction.category);
         }
+        
       }
       
       return matchesSearch && matchesType && matchesCategory;
@@ -167,8 +236,7 @@ export const TransactionsPage: React.FC = () => {
       { value: 'business-self-employment', label: 'Business & Self-Employment' },
       { value: 'investment-income', label: 'Investment Income' },
       { value: 'passive-income', label: 'Passive Income' },
-      { value: 'government-benefits', label: 'Government & Benefits' },
-      { value: 'other-income', label: 'Other Income' }
+      { value: 'government-benefits', label: 'Government & Benefits' }
     ];
 
     const expenseParentCategories = [
@@ -223,7 +291,7 @@ export const TransactionsPage: React.FC = () => {
       { value: 'rebates-cashback', label: 'Rebates & Cashback' },
       { value: 'reimbursements', label: 'Reimbursements' },
       { value: 'sold-items', label: 'Sold Items' },
-      { value: 'other', label: 'Other' },
+      { value: 'other-income', label: 'Other Income' },
       
       // Expense subcategories
       { value: 'business-travel', label: 'Business Travel' },
@@ -295,6 +363,7 @@ export const TransactionsPage: React.FC = () => {
       { value: 'legal-fees', label: 'Legal Fees' },
       { value: 'subscriptions', label: 'Subscriptions' },
       { value: 'tobacco-vaping', label: 'Tobacco/Vaping' },
+      { value: 'other', label: 'Other' },
       { value: 'cosmetics-skincare', label: 'Cosmetics/Skincare' },
       { value: 'haircuts-salon', label: 'Haircuts/Salon' },
       { value: 'laundry-dry-cleaning', label: 'Laundry/Dry Cleaning' },
@@ -367,7 +436,7 @@ export const TransactionsPage: React.FC = () => {
           'investment-income': ['capital-gains', 'crypto-gains', 'dividends', 'interest', 'rental-income'],
           'passive-income': ['ad-revenue', 'automated-business', 'licensing-fees', 'subscription-revenue'],
           'government-benefits': ['grants-subsidies', 'pension', 'social-security', 'tax-refund', 'unemployment-benefits'],
-          'other-income': ['gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other'],
+          'other-income': ['gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other-income'],
           'business-expenses': ['business-travel', 'equipment', 'marketing-advertising', 'office-supplies', 'professional-fees', 'software-subscriptions'],
           'charitable-gifts': ['charitable-subscriptions', 'donations', 'gifts', 'charity'],
           'childcare': ['babysitting', 'child-support', 'daycare', 'kids-activities', 'school-supplies', 'toys-games'],
@@ -412,7 +481,7 @@ export const TransactionsPage: React.FC = () => {
           'investment-income': ['capital-gains', 'crypto-gains', 'dividends', 'interest', 'rental-income'],
           'passive-income': ['ad-revenue', 'automated-business', 'licensing-fees', 'subscription-revenue'],
           'government-benefits': ['grants-subsidies', 'pension', 'social-security', 'tax-refund', 'unemployment-benefits'],
-          'other-income': ['gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other'],
+          'other-income': ['gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other-income'],
           'business-expenses': ['business-travel', 'equipment', 'marketing-advertising', 'office-supplies', 'professional-fees', 'software-subscriptions'],
           'charitable-gifts': ['charitable-subscriptions', 'donations', 'gifts', 'charity'],
           'childcare': ['babysitting', 'child-support', 'daycare', 'kids-activities', 'school-supplies', 'toys-games'],
@@ -447,7 +516,7 @@ export const TransactionsPage: React.FC = () => {
           'capital-gains', 'crypto-gains', 'dividends', 'interest', 'rental-income',
           'ad-revenue', 'automated-business', 'licensing-fees', 'subscription-revenue',
           'grants-subsidies', 'pension', 'social-security', 'tax-refund', 'unemployment-benefits',
-          'gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other'];
+          'gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other-income'];
         return incomeSubs.includes(sub.value);
       });
       return createFlatOptions(incomeParentCategories, incomeSubs);
@@ -729,6 +798,14 @@ export const TransactionsPage: React.FC = () => {
               <option value="this-year">This Year</option>
               <option value="custom">Custom Range</option>
             </select>
+                
+                <Button 
+                  variant="secondary" 
+                  onClick={resetFilters}
+                  className="text-sm px-3 py-2"
+                >
+                  Reset All Filters
+                </Button>
             </div>
           </div>
         </div>
