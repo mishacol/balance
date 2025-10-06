@@ -28,3 +28,6 @@ dist-ssr
 .env.local
 .env.production
 .env.development
+
+# Public directory (contains backup files)
+public/

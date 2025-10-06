@@ -1,21 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
 import { TransactionList } from './TransactionList';
 import { Button } from '../ui/Button';
 import { useTransactionStore } from '../../store/transactionStore';
+import { supabaseService } from '../../services/supabaseService';
 import { SearchIcon, DownloadIcon } from 'lucide-react';
 import Select from 'react-select';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 export const TransactionsPage: React.FC = () => {
+  console.log(`🔍 [TRANSACTIONS PAGE] Component mounted/rendered`);
   const navigate = useNavigate();
-  const { transactions, removeDuplicates } = useTransactionStore();
+  const { transactions } = useTransactionStore();
   
   // Persistent filter state - loads from localStorage on mount
   const [searchQuery, setSearchQuery] = useState(() => {
     return localStorage.getItem('transactions-search-query') || '';
   });
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const [typeFilter, setTypeFilter] = useState(() => {
     return localStorage.getItem('transactions-type-filter') || '';
   });
@@ -33,6 +36,137 @@ export const TransactionsPage: React.FC = () => {
     const saved = localStorage.getItem('transactions-custom-end-date');
     return saved ? new Date(saved) : null;
   });
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(25);
+  const [totalCount, setTotalCount] = useState(0);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+  const [paginatedTransactions, setPaginatedTransactions] = useState<any[]>([]);
+
+  // Debounced search effect (300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Helper function to get date range for filtering
+  const getDateRange = useCallback(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    switch (selectedTimeRange) {
+      case 'all-time':
+        return { startDate: null, endDate: null };
+      case 'this-month':
+        const thisMonthStart = new Date(currentYear, currentMonth, 1);
+        const thisMonthEnd = new Date(currentYear, currentMonth + 1, 0);
+        return { startDate: thisMonthStart.toISOString().split('T')[0], endDate: thisMonthEnd.toISOString().split('T')[0] };
+      case 'last-month':
+        const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+        const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+        const lastMonthStart = new Date(lastMonthYear, lastMonth, 1);
+        const lastMonthEnd = new Date(lastMonthYear, lastMonth + 1, 0);
+        return { startDate: lastMonthStart.toISOString().split('T')[0], endDate: lastMonthEnd.toISOString().split('T')[0] };
+      case 'this-year':
+        const yearStart = new Date(currentYear, 0, 1);
+        const yearEnd = new Date(currentYear, 11, 31);
+        return { startDate: yearStart.toISOString().split('T')[0], endDate: yearEnd.toISOString().split('T')[0] };
+      case 'last-transactions':
+        return { startDate: null, endDate: null };
+      case 'custom':
+        if (customStartDate && customEndDate) {
+          return { 
+            startDate: customStartDate.toISOString().split('T')[0], 
+            endDate: customEndDate.toISOString().split('T')[0] 
+          };
+        }
+        return { startDate: null, endDate: null };
+      default:
+        return { startDate: null, endDate: null };
+    }
+  }, [selectedTimeRange, customStartDate, customEndDate]);
+
+  // Load paginated transactions when filters change
+  const loadPaginatedTransactions = useCallback(async () => {
+    setIsLoadingTransactions(true);
+    try {
+      const { isUsingSupabase } = useTransactionStore.getState();
+      
+      console.log(`🔍 [PAGINATION DEBUG] isUsingSupabase: ${isUsingSupabase}, currentPage: ${currentPage}, pageSize: ${pageSize}`);
+      
+      // Always use Supabase if user is authenticated (fallback for edge cases)
+      const shouldUseSupabase = isUsingSupabase || (await supabaseService.getUserId()) !== null;
+      
+      if (shouldUseSupabase) {
+        // Get date range for filtering
+        const { startDate, endDate } = getDateRange();
+        
+        console.log(`🔍 [PAGINATION DEBUG] Date range: ${startDate} to ${endDate}`);
+        
+        const result = await supabaseService.getTransactionsPaginated({
+          page: currentPage,
+          pageSize,
+          searchQuery: debouncedSearchQuery,
+          typeFilter,
+          categoryFilter,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          sortBy: 'date',
+          sortOrder: 'desc'
+        });
+        
+        setPaginatedTransactions(result.transactions);
+        setTotalCount(result.totalCount);
+        
+        console.log(`🔍 [PAGINATION] Loaded ${result.transactions.length} transactions, total: ${result.totalCount}`);
+      } else {
+        // For local storage, use existing filtered logic but paginate it
+        const filtered = getFilteredTransactions();
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        
+        setPaginatedTransactions(filtered.slice(startIndex, endIndex));
+        setTotalCount(filtered.length);
+        
+        console.log(`🔍 [PAGINATION LOCAL] Loaded ${filtered.slice(startIndex, endIndex).length} transactions, total: ${filtered.length}`);
+      }
+    } catch (error) {
+      console.error('Error loading paginated transactions:', error);
+      setPaginatedTransactions([]);
+      setTotalCount(0);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  }, [currentPage, debouncedSearchQuery, typeFilter, categoryFilter, selectedTimeRange, customStartDate, customEndDate]);
+
+  // Load transactions when filters change
+  useEffect(() => {
+    setCurrentPage(1); // Reset to first page when filters change
+    loadPaginatedTransactions();
+  }, [debouncedSearchQuery, typeFilter, categoryFilter, selectedTimeRange, customStartDate, customEndDate]);
+
+  // Load transactions when page changes
+  useEffect(() => {
+    loadPaginatedTransactions();
+  }, [currentPage]);
+
+  // Initial load on component mount
+  useEffect(() => {
+    console.log(`🔍 [PAGINATION] Component mounted, loading initial transactions...`);
+    console.log(`🔍 [PAGINATION] Current state:`, { 
+      currentPage, 
+      pageSize, 
+      totalCount, 
+      paginatedTransactionsLength: paginatedTransactions.length,
+      transactionsLength: transactions.length 
+    });
+    loadPaginatedTransactions();
+  }, []); // Empty dependency array for initial load only
 
   // Save filter state to localStorage whenever it changes
   useEffect(() => {
@@ -188,9 +322,159 @@ export const TransactionsPage: React.FC = () => {
 
   const filteredTransactions = getFilteredTransactions()
     .filter(transaction => {
-      const matchesSearch = searchQuery === '' || 
-        transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        transaction.category.toLowerCase().includes(searchQuery.toLowerCase());
+      // Get category label for search
+      const allSubcategories = [
+        // Income subcategories
+        { value: 'bonus', label: 'Bonus' },
+        { value: 'commission', label: 'Commission' },
+        { value: 'hourly-wages', label: 'Hourly Wages' },
+        { value: 'overtime', label: 'Overtime' },
+        { value: 'salary', label: 'Salary' },
+        { value: 'tips-gratuities', label: 'Tips & Gratuities' },
+        { value: 'affiliate-income', label: 'Affiliate Income' },
+        { value: 'business-revenue', label: 'Business Revenue' },
+        { value: 'consulting-fees', label: 'Consulting Fees' },
+        { value: 'freelance-income', label: 'Freelance Income' },
+        { value: 'royalties', label: 'Royalties' },
+        { value: 'capital-gains', label: 'Capital Gains' },
+        { value: 'crypto-gains', label: 'Crypto Gains' },
+        { value: 'dividends', label: 'Dividends' },
+        { value: 'interest', label: 'Interest' },
+        { value: 'rental-income', label: 'Rental Income' },
+        { value: 'ad-revenue', label: 'Ad Revenue' },
+        { value: 'automated-business', label: 'Automated Business' },
+        { value: 'licensing-fees', label: 'Licensing Fees' },
+        { value: 'subscription-revenue', label: 'Subscription Revenue' },
+        { value: 'grants-subsidies', label: 'Grants & Subsidies' },
+        { value: 'pension', label: 'Pension' },
+        { value: 'social-security', label: 'Social Security' },
+        { value: 'tax-refund', label: 'Tax Refund' },
+        { value: 'unemployment-benefits', label: 'Unemployment Benefits' },
+        { value: 'gifts', label: 'Gifts' },
+        { value: 'charity', label: 'Charity' },
+        { value: 'inheritance', label: 'Inheritance' },
+        { value: 'lottery-gambling', label: 'Lottery & Gambling' },
+        { value: 'rebates-cashback', label: 'Rebates & Cashback' },
+        { value: 'reimbursements', label: 'Reimbursements' },
+        { value: 'sold-items', label: 'Sold Items' },
+        { value: 'other-income', label: 'Other Income' },
+        
+        // Expense subcategories
+        { value: 'business-travel', label: 'Business Travel' },
+        { value: 'equipment', label: 'Equipment' },
+        { value: 'marketing-advertising', label: 'Marketing/Advertising' },
+        { value: 'office-supplies', label: 'Office Supplies' },
+        { value: 'professional-fees', label: 'Professional Fees' },
+        { value: 'software-subscriptions', label: 'Software/Subscriptions' },
+        { value: 'charitable-subscriptions', label: 'Charitable Subscriptions' },
+        { value: 'donations', label: 'Donations' },
+        { value: 'babysitting', label: 'Babysitting' },
+        { value: 'child-support', label: 'Child Support' },
+        { value: 'daycare', label: 'Daycare' },
+        { value: 'kids-activities', label: 'Kids Activities' },
+        { value: 'school-supplies', label: 'School Supplies' },
+        { value: 'toys-games', label: 'Toys & Games' },
+        { value: 'books-supplies', label: 'Books & Supplies' },
+        { value: 'online-courses', label: 'Online Courses' },
+        { value: 'student-loans', label: 'Student Loans' },
+        { value: 'tutoring', label: 'Tutoring' },
+        { value: 'tuition', label: 'Tuition' },
+        { value: 'books-magazines', label: 'Books/Magazines' },
+        { value: 'games-apps', label: 'Games/Apps' },
+        { value: 'hobbies', label: 'Hobbies' },
+        { value: 'music-streaming', label: 'Music/Streaming' },
+        { value: 'sports-recreation', label: 'Sports/Recreation' },
+        { value: 'vacation-travel', label: 'Vacation/Travel' },
+        { value: 'movies', label: 'Movies' },
+        { value: 'concerts', label: 'Concerts' },
+        { value: 'theaters', label: 'Theaters' },
+        { value: 'night-clubs', label: 'Night Clubs' },
+        { value: 'bank-fees', label: 'Bank Fees' },
+        { value: 'credit-card-payments', label: 'Credit Card Payments' },
+        { value: 'investment-contributions', label: 'Investment Contributions' },
+        { value: 'life-insurance', label: 'Life Insurance' },
+        { value: 'personal-loans', label: 'Personal Loans' },
+        { value: 'savings', label: 'Savings' },
+        { value: 'taxes', label: 'Taxes' },
+        { value: 'alcohol', label: 'Alcohol' },
+        { value: 'beverages', label: 'Beverages' },
+        { value: 'coffee-shops', label: 'Coffee Shops' },
+        { value: 'delivery-takeout', label: 'Delivery/Takeout' },
+        { value: 'fast-food', label: 'Fast Food' },
+        { value: 'groceries', label: 'Groceries' },
+        { value: 'restaurants', label: 'Restaurants' },
+        { value: 'dental', label: 'Dental' },
+        { value: 'doctor-visits', label: 'Doctor Visits' },
+        { value: 'fitness-gym', label: 'Fitness/Gym' },
+        { value: 'health-insurance', label: 'Health Insurance' },
+        { value: 'hospital-emergency', label: 'Hospital/Emergency' },
+        { value: 'prescriptions', label: 'Prescriptions' },
+        { value: 'therapy-counseling', label: 'Therapy/Counseling' },
+        { value: 'vision', label: 'Vision' },
+        { value: 'pharmacy', label: 'Pharmacy' },
+        { value: 'furniture-appliances', label: 'Furniture/Appliances' },
+        { value: 'home-insurance', label: 'Home Insurance' },
+        { value: 'maintenance-repairs', label: 'Maintenance/Repairs' },
+        { value: 'property-tax', label: 'Property Tax' },
+        { value: 'rent', label: 'Rent' },
+        { value: 'mortgage', label: 'Mortgage' },
+        { value: 'cleaning-products', label: 'Cleaning Products' },
+        { value: 'electronics', label: 'Electronics' },
+        { value: 'kitchen-utensils', label: 'Kitchen Utensils' },
+        { value: 'household-goods', label: 'Household Goods' },
+        { value: 'cash-withdrawals', label: 'Cash Withdrawals' },
+        { value: 'cigarettes', label: 'Cigarettes' },
+        { value: 'fines-penalties', label: 'Fines/Penalties' },
+        { value: 'legal-fees', label: 'Legal Fees' },
+        { value: 'lottery-gambling', label: 'Lottery & Gambling' },
+        { value: 'other', label: 'Other' },
+        { value: 'subscriptions', label: 'Subscriptions' },
+        { value: 'tobacco-vaping', label: 'Tobacco/Vaping' },
+        { value: 'cosmetics-skincare', label: 'Cosmetics/Skincare' },
+        { value: 'haircuts-salon', label: 'Haircuts/Salon' },
+        { value: 'laundry-dry-cleaning', label: 'Laundry/Dry Cleaning' },
+        { value: 'spa-massage', label: 'Spa/Massage' },
+        { value: 'personal-hygiene', label: 'Personal Hygiene' },
+        { value: 'shaving-razor', label: 'Shaving Razor' },
+        { value: 'clothing', label: 'Clothing' },
+        { value: 'shoes', label: 'Shoes' },
+        { value: 'grooming', label: 'Grooming' },
+        { value: 'pet-food', label: 'Pet Food' },
+        { value: 'pet-insurance', label: 'Pet Insurance' },
+        { value: 'pet-supplies', label: 'Pet Supplies' },
+        { value: 'veterinary', label: 'Veterinary' },
+        { value: 'car-insurance', label: 'Car Insurance' },
+        { value: 'car-payment', label: 'Car Payment' },
+        { value: 'gas-fuel', label: 'Gas/Fuel' },
+        { value: 'interurban-travel', label: 'Interurban Travel' },
+        { value: 'international-travel', label: 'International Travel' },
+        { value: 'parking', label: 'Parking' },
+        { value: 'public-transit', label: 'Public Transit' },
+        { value: 'rideshare-taxi', label: 'Rideshare/Taxi' },
+        { value: 'tolls', label: 'Tolls' },
+        { value: 'vehicle-registration', label: 'Vehicle Registration' },
+        { value: 'electricity', label: 'Electricity' },
+        { value: 'gas', label: 'Gas' },
+        { value: 'heating', label: 'Heating' },
+        { value: 'trash-recycling', label: 'Trash/Recycling' },
+        { value: 'water-sewer', label: 'Water/Sewer' },
+        { value: 'building-maintenance', label: 'Building Maintenance' },
+        { value: 'apartment-intercom', label: 'Apartment Intercom' },
+        { value: 'building-cleaning', label: 'Building Cleaning' },
+        { value: 'mobile-phone', label: 'Mobile Phone' },
+        { value: 'landline-phone', label: 'Landline Phone' },
+        { value: 'voip', label: 'VoIP' },
+        { value: 'cable-satellite-tv', label: 'Cable/Satellite TV' },
+        { value: 'internet', label: 'Internet' },
+        { value: 'souvenirs', label: 'Souvenirs' }
+      ];
+      
+      const categoryLabel = allSubcategories.find(cat => cat.value === transaction.category)?.label || transaction.category;
+      
+      const matchesSearch = debouncedSearchQuery === '' || 
+        transaction.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        transaction.category.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        categoryLabel.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
       
       const matchesType = typeFilter === '' || transaction.type === typeFilter;
       
@@ -207,23 +491,24 @@ export const TransactionsPage: React.FC = () => {
           'government-benefits': ['grants-subsidies', 'pension', 'social-security', 'tax-refund', 'unemployment-benefits'],
           'other-income': ['gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other-income'],
           
-          // Expense groups
+          // Expense groups - alphabetically ordered
           'business-expenses': ['business-travel', 'equipment', 'marketing-advertising', 'office-supplies', 'professional-fees', 'software-subscriptions'],
-          'charitable-gifts': ['charitable-subscriptions', 'donations', 'gifts', 'charity'],
+          'charitable-gifts': ['charitable-subscriptions', 'charity', 'donations', 'gifts'],
           'childcare': ['babysitting', 'child-support', 'daycare', 'kids-activities', 'school-supplies', 'toys-games'],
+          'clothing-footwear': ['clothing', 'shoes'],
           'education': ['books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition'],
-          'entertainment': ['books-magazines', 'games-apps', 'hobbies', 'music-streaming', 'sports-recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs'],
+          'entertainment': ['books-magazines', 'concerts', 'games-apps', 'hobbies', 'movies', 'music-streaming', 'night-clubs', 'sports-recreation', 'theaters', 'vacation-travel'],
           'financial-obligations': ['bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes'],
           'food-dining': ['alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
-          'healthcare': ['dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy'],
-          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
+          'healthcare': ['dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'pharmacy', 'prescriptions', 'therapy-counseling', 'vision'],
+          'housing': ['apartment-intercom', 'building-cleaning', 'building-maintenance', 'cleaning-products', 'electronics', 'furniture-appliances', 'home-insurance', 'household-goods', 'kitchen-utensils', 'maintenance-repairs', 'mortgage', 'property-tax', 'rent'],
           'miscellaneous': ['cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping'],
-          'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'spa-massage', 'personal-hygiene'],
-          'clothing-footwear': ['clothing', 'shoes'],
+          'online-shopping': ['souvenirs'],
+          'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'personal-hygiene', 'shaving-razor', 'spa-massage'],
           'pets': ['grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary'],
+          'telecommunications': ['cable-satellite-tv', 'internet', 'landline-phone', 'mobile-phone', 'voip'],
           'transportation': ['car-insurance', 'car-payment', 'gas-fuel', 'interurban-travel', 'international-travel', 'maintenance-repairs', 'parking', 'public-transit', 'rideshare-taxi', 'tolls', 'vehicle-registration'],
-          'utilities': ['electricity', 'gas', 'heating', 'trash-recycling', 'water-sewer', 'building-maintenance', 'apartment-intercom', 'building-cleaning'],
-          'telecommunications': ['mobile-phone', 'landline-phone', 'voip', 'cable-satellite-tv', 'internet'],
+          'utilities': ['apartment-intercom', 'building-cleaning', 'building-maintenance', 'electricity', 'gas', 'heating', 'trash-recycling', 'water-sewer'],
         };
         
         if (categoryGroups[categoryFilter]) {
@@ -267,21 +552,22 @@ export const TransactionsPage: React.FC = () => {
     ];
 
     const expenseParentCategories = [
-      { value: 'food-dining', label: 'Food & Dining' },
-      { value: 'housing', label: 'Housing' },
-      { value: 'utilities', label: 'Utilities' },
-      { value: 'telecommunications', label: 'Telecommunications' },
-      { value: 'transportation', label: 'Transportation' },
-      { value: 'healthcare', label: 'Healthcare' },
-      { value: 'clothing-footwear', label: 'Clothing & Footwear' },
-      { value: 'personal-care', label: 'Personal Care' },
-      { value: 'entertainment', label: 'Entertainment' },
-      { value: 'education', label: 'Education' },
       { value: 'business-expenses', label: 'Business Expenses' },
-      { value: 'financial-obligations', label: 'Financial Obligations' },
-      { value: 'pets', label: 'Pets' },
       { value: 'charitable-gifts', label: 'Charitable & Gifts' },
       { value: 'childcare', label: 'Childcare' },
+      { value: 'clothing-footwear', label: 'Clothing & Footwear' },
+      { value: 'education', label: 'Education' },
+      { value: 'entertainment', label: 'Entertainment' },
+      { value: 'financial-obligations', label: 'Financial Obligations' },
+      { value: 'food-dining', label: 'Food & Dining' },
+      { value: 'healthcare', label: 'Healthcare' },
+      { value: 'housing', label: 'Housing' },
+      { value: 'online-shopping', label: 'Online Shopping' },
+      { value: 'personal-care', label: 'Personal Care' },
+      { value: 'pets', label: 'Pets' },
+      { value: 'telecommunications', label: 'Telecommunications' },
+      { value: 'transportation', label: 'Transportation' },
+      { value: 'utilities', label: 'Utilities' },
       { value: 'miscellaneous', label: 'Miscellaneous' }
     ];
 
@@ -452,95 +738,15 @@ export const TransactionsPage: React.FC = () => {
       { value: 'other-investments', label: 'Other Investments' }
     ];
 
-    // Create grouped options for react-select
-    const createGroupedOptions = (categories: any[], subcategories: any[]) => {
-      const groupedOptions: { label: string; options: any[] }[] = [];
-      
-      categories.forEach(category => {
-        const group: { label: string; options: any[] } = {
-          label: category.label,
-          options: []
-        };
-        
-        // Find subcategories that belong to this parent category
-        const categoryGroups: { [key: string]: string[] } = {
-          'employment-income': ['bonus', 'commission', 'hourly-wages', 'overtime', 'salary', 'tips-gratuities'],
-          'business-self-employment': ['affiliate-income', 'business-revenue', 'consulting-fees', 'freelance-income', 'royalties'],
-          'investment-income': ['capital-gains', 'crypto-gains', 'dividends', 'interest', 'rental-income'],
-          'passive-income': ['ad-revenue', 'automated-business', 'licensing-fees', 'subscription-revenue'],
-          'government-benefits': ['grants-subsidies', 'pension', 'social-security', 'tax-refund', 'unemployment-benefits'],
-          'other-income': ['gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other-income'],
-          'business-expenses': ['business-travel', 'equipment', 'marketing-advertising', 'office-supplies', 'professional-fees', 'software-subscriptions'],
-          'charitable-gifts': ['charitable-subscriptions', 'donations', 'gifts', 'charity'],
-          'childcare': ['babysitting', 'child-support', 'daycare', 'kids-activities', 'school-supplies', 'toys-games'],
-          'education': ['books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition'],
-          'entertainment': ['books-magazines', 'games-apps', 'hobbies', 'music-streaming', 'sports-recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs'],
-          'financial-obligations': ['bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes'],
-          'food-dining': ['alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
-          'healthcare': ['dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy'],
-          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
-          'miscellaneous': ['cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping'],
-          'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'spa-massage', 'personal-hygiene'],
-          'clothing-footwear': ['clothing', 'shoes'],
-          'pets': ['grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary'],
-          'transportation': ['car-insurance', 'car-payment', 'gas-fuel', 'interurban-travel', 'international-travel', 'maintenance-repairs', 'parking', 'public-transit', 'rideshare-taxi', 'tolls', 'vehicle-registration'],
-          'utilities': ['electricity', 'gas', 'heating', 'trash-recycling', 'water-sewer', 'building-maintenance', 'apartment-intercom', 'building-cleaning'],
-          'telecommunications': ['mobile-phone', 'landline-phone', 'voip', 'cable-satellite-tv', 'internet'],
-        };
-        
-        const subcategoryValues = categoryGroups[category.value] || [];
-        const matchingSubcategories = subcategories.filter(sub => subcategoryValues.includes(sub.value));
-        
-        // Add parent category first, then subcategories
-        group.options.push(category);
-        group.options.push(...matchingSubcategories);
-        
-        groupedOptions.push(group);
-      });
-      
-      return groupedOptions;
-    };
-
     // Create flat list with parent categories and subcategories
     const createFlatOptions = (categories: any[], subcategories: any[]) => {
       const flatOptions: any[] = [];
       
-      categories.forEach(category => {
-        // Add parent category as selectable option
-        flatOptions.push(category);
-        
-        // Find subcategories that belong to this parent category
-        const categoryGroups: { [key: string]: string[] } = {
-          'employment-income': ['bonus', 'commission', 'hourly-wages', 'overtime', 'salary', 'tips-gratuities'],
-          'business-self-employment': ['affiliate-income', 'business-revenue', 'consulting-fees', 'freelance-income', 'royalties'],
-          'investment-income': ['capital-gains', 'crypto-gains', 'dividends', 'interest', 'rental-income'],
-          'passive-income': ['ad-revenue', 'automated-business', 'licensing-fees', 'subscription-revenue'],
-          'government-benefits': ['grants-subsidies', 'pension', 'social-security', 'tax-refund', 'unemployment-benefits'],
-          'other-income': ['gifts', 'inheritance', 'lottery-gambling', 'rebates-cashback', 'reimbursements', 'sold-items', 'other-income'],
-          'business-expenses': ['business-travel', 'equipment', 'marketing-advertising', 'office-supplies', 'professional-fees', 'software-subscriptions'],
-          'charitable-gifts': ['charitable-subscriptions', 'donations', 'gifts', 'charity'],
-          'childcare': ['babysitting', 'child-support', 'daycare', 'kids-activities', 'school-supplies', 'toys-games'],
-          'education': ['books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition'],
-          'entertainment': ['books-magazines', 'games-apps', 'hobbies', 'music-streaming', 'sports-recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs'],
-          'financial-obligations': ['bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes'],
-          'food-dining': ['alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
-          'healthcare': ['dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy'],
-          'housing': ['furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods'],
-          'miscellaneous': ['cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping'],
-          'personal-care': ['cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'spa-massage', 'personal-hygiene'],
-          'clothing-footwear': ['clothing', 'shoes'],
-          'pets': ['grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary'],
-          'transportation': ['car-insurance', 'car-payment', 'gas-fuel', 'interurban-travel', 'international-travel', 'maintenance-repairs', 'parking', 'public-transit', 'rideshare-taxi', 'tolls', 'vehicle-registration'],
-          'utilities': ['electricity', 'gas', 'heating', 'trash-recycling', 'water-sewer', 'building-maintenance', 'apartment-intercom', 'building-cleaning'],
-          'telecommunications': ['mobile-phone', 'landline-phone', 'voip', 'cable-satellite-tv', 'internet'],
-        };
-        
-        const subcategoryValues = categoryGroups[category.value] || [];
-        const matchingSubcategories = subcategories.filter(sub => subcategoryValues.includes(sub.value));
-        
-        // Add subcategories
-        flatOptions.push(...matchingSubcategories);
-      });
+      // Add all subcategories first (individual selectable options)
+      flatOptions.push(...subcategories);
+      
+      // Then add parent categories
+      flatOptions.push(...categories);
       
       return flatOptions;
     };
@@ -562,15 +768,18 @@ export const TransactionsPage: React.FC = () => {
         const expenseSubs = ['business-travel', 'equipment', 'marketing-advertising', 'office-supplies', 'professional-fees', 'software-subscriptions',
           'charitable-subscriptions', 'donations', 'gifts', 'charity', 'babysitting', 'child-support', 'daycare', 'kids-activities', 'school-supplies', 'toys-games',
           'books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition',
+          'books-magazines', 'games-apps', 'hobbies', 'music-streaming', 'sports-recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs', 'event-tickets',
           'bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes',
-          'alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants',
+          'alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants', 'snacks-candies',
           'dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy',
           'furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods',
           'cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping',
-          'cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'spa-massage', 'personal-hygiene',
+          'cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'spa-massage', 'personal-hygiene', 'shaving-razor',
+          'clothing', 'shoes',
           'grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary',
           'car-insurance', 'car-payment', 'gas-fuel', 'interurban-travel', 'international-travel', 'maintenance-repairs', 'parking', 'public-transit', 'rideshare-taxi', 'tolls', 'vehicle-registration',
-          'electricity', 'gas', 'heating', 'trash-recycling', 'water-sewer', 'building-maintenance', 'apartment-intercom', 'building-cleaning'];
+          'electricity', 'gas', 'heating', 'trash-recycling', 'water-sewer', 'building-maintenance', 'apartment-intercom', 'building-cleaning',
+          'mobile-phone', 'landline-phone', 'voip', 'cable-satellite-tv', 'internet', 'electronics', 'souvenirs'];
         return expenseSubs.includes(sub.value);
       });
       return createFlatOptions(expenseParentCategories, expenseSubs);
@@ -635,7 +844,7 @@ export const TransactionsPage: React.FC = () => {
     yPosition += 10;
     
     // Add transactions (all transactions, not just first 50)
-    finalFilteredTransactions.forEach((transaction, index) => {
+    finalFilteredTransactions.forEach((transaction, _index) => {
       if (yPosition > 280) {
         doc.addPage();
         yPosition = 20;
@@ -902,13 +1111,48 @@ export const TransactionsPage: React.FC = () => {
         )}
         
         <TransactionList 
-          transactions={finalFilteredTransactions} 
+          transactions={paginatedTransactions} 
           typeFilter={typeFilter}
           categoryFilter={categoryFilter}
           selectedTimeRange={selectedTimeRange}
           customStartDate={customStartDate}
           customEndDate={customEndDate}
+          isLoading={isLoadingTransactions}
+          useExternalPagination={true}
         />
+        
+        {/* Pagination Controls */}
+        {totalCount > pageSize && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-gray-400">
+              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} transactions
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1 || isLoadingTransactions}
+              >
+                Previous
+              </Button>
+              
+              <span className="text-sm text-gray-400">
+                Page {currentPage} of {Math.ceil(totalCount / pageSize)}
+              </span>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.min(Math.ceil(totalCount / pageSize), currentPage + 1))}
+                disabled={currentPage >= Math.ceil(totalCount / pageSize) || isLoadingTransactions}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
     </div>;
 };

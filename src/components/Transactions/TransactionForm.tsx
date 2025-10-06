@@ -14,6 +14,8 @@ export const TransactionForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { transactions, addTransaction, updateTransaction } = useTransactionStore();
   const [selectedType, setSelectedType] = useState<'income' | 'expense' | 'investment'>('income');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   
   // Check if we're editing an existing transaction
   const isEditing = Boolean(id);
@@ -58,26 +60,58 @@ export const TransactionForm: React.FC = () => {
   }, [existingTransaction, reset]);
 
   const onSubmit = async (data: TransactionFormData) => {
-    // 🚨 DEBUG: Log transaction data before saving
-    console.log(`💾 [FORM] Submitting transaction:`, {
-      originalData: data,
-      dateString: data.date,
-      dateType: typeof data.date,
-      dateParse: new Date(data.date).toDateString(),
-    });
-    
-    if (isEditing && existingTransaction) {
-      await updateTransaction(existingTransaction.id, {
-        ...data,
-        description: data.description || ''
-      });
-    } else {
-      addTransaction({
-        ...data,
-        description: data.description || ''
-      });
+    // 🛡️ PREVENT DOUBLE SUBMISSION
+    if (isSubmitting) {
+      console.log('⚠️ [FORM] Submission already in progress, ignoring duplicate click');
+      return;
     }
-    navigate('/transactions');
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // 🚨 DEBUG: Log transaction data before saving
+      console.log(`💾 [FORM] Submitting transaction:`, {
+        originalData: data,
+        dateString: data.date,
+        dateType: typeof data.date,
+        dateParse: new Date(data.date).toDateString(),
+      });
+      
+      if (isEditing && existingTransaction) {
+        await updateTransaction(existingTransaction.id, {
+          ...data,
+          description: data.description || ''
+        });
+        navigate('/transactions');
+      } else {
+        // 🛡️ DUPLICATE PREVENTION: Use enhanced addTransaction with result handling
+        const result = await addTransaction({
+          ...data,
+          description: data.description || ''
+        }, {
+          source: 'form'
+        });
+
+        if (result.success) {
+          console.log('✅ [FORM] Transaction added successfully:', result.message);
+          navigate('/transactions');
+        } else {
+          console.log('⚠️ [FORM] Transaction add failed:', result.message);
+          setSubmitError(result.message);
+          
+          // If it's a duplicate, show specific message
+          if (result.duplicateId) {
+            setSubmitError(`This transaction already exists. Duplicate ID: ${result.duplicateId}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ [FORM] Unexpected error during submission:', error);
+      setSubmitError(`Unexpected error: ${error}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleTypeChange = (type: 'income' | 'expense' | 'investment') => {
@@ -257,7 +291,8 @@ export const TransactionForm: React.FC = () => {
             { value: 'movies', label: 'Movies' },
             { value: 'concerts', label: 'Concerts' },
             { value: 'theaters', label: 'Theaters' },
-            { value: 'night-clubs', label: 'Night Clubs' }
+            { value: 'night-clubs', label: 'Night Clubs' },
+            { value: 'event-tickets', label: 'Event Tickets' }
           ]
         },
         {
@@ -281,7 +316,8 @@ export const TransactionForm: React.FC = () => {
             { value: 'delivery-takeout', label: 'Delivery & Takeout' },
             { value: 'fast-food', label: 'Fast Food' },
             { value: 'groceries', label: 'Groceries' },
-            { value: 'restaurants', label: 'Restaurants' }
+            { value: 'restaurants', label: 'Restaurants' },
+            { value: 'snacks-candies', label: 'Snacks & Candies' }
           ]
         },
         {
@@ -314,6 +350,13 @@ export const TransactionForm: React.FC = () => {
           ]
         },
         {
+          label: 'Online Shopping',
+          options: [
+            { value: 'electronics', label: 'Electronics' },
+            { value: 'souvenirs', label: 'Souvenirs' }
+          ]
+        },
+        {
           label: 'Miscellaneous',
           options: [
             { value: 'cash-withdrawals', label: 'Cash Withdrawals' },
@@ -329,10 +372,11 @@ export const TransactionForm: React.FC = () => {
         {
           label: 'Personal Care',
           options: [
-            { value: 'personal-hygiene', label: 'Personal Hygiene' },
             { value: 'cosmetics-skincare', label: 'Cosmetics/Skincare' },
             { value: 'haircuts-salon', label: 'Haircuts/Salon' },
             { value: 'laundry-dry-cleaning', label: 'Laundry/Dry Cleaning' },
+            { value: 'personal-hygiene', label: 'Personal Hygiene' },
+            { value: 'shaving-razor', label: 'Shaving Razor' },
             { value: 'spa-massage', label: 'Spa/Massage' }
           ]
         },
@@ -530,6 +574,7 @@ export const TransactionForm: React.FC = () => {
                 placeholder="Please select a category"
                 isSearchable
                 isClearable
+                maxMenuHeight={300}
                 filterOption={(option, inputValue) => {
                   return option.label.toLowerCase().includes(inputValue.toLowerCase());
                 }}
@@ -626,12 +671,43 @@ export const TransactionForm: React.FC = () => {
             <p className="text-highlight text-xs mt-1">Detailed description required for "Other" category</p>
           )}
         </div>
+        {/* Error Display */}
+        {submitError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Transaction Error
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  {submitError}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="pt-4 flex justify-end space-x-3">
-          <Button variant="outline" type="button" onClick={() => navigate('/transactions')}>
+          <Button variant="outline" type="button" onClick={() => navigate('/transactions')} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" type="submit">
-            {isEditing ? 'Update Transaction' : 'Save Transaction'}
+          <Button variant="primary" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <div className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {isEditing ? 'Updating...' : 'Adding...'}
+              </div>
+            ) : (
+              isEditing ? 'Update Transaction' : 'Save Transaction'
+            )}
           </Button>
         </div>
       </form>

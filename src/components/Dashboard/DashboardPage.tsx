@@ -26,13 +26,22 @@ export const DashboardPage: React.FC = () => {
   const [summary, setSummary] = useState({ 
     totalIncome: 0, 
     totalExpenses: 0, 
-    totalInvestments: 0, 
+    totalInvestments: 0,
     monthlyAvailable: 0,
     cumulativeAvailable: 0,
     cumulativeInvestments: 0,
     netBalance: 0 
   });
   const [isConvertingCurrency, setIsConvertingCurrency] = useState(false);
+  
+  // Pagination state for Dashboard transactions
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(25);
+  
+  // Reset page when time range changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedTimeRange, customStartDate, customEndDate]);
   
   // Filter transactions based on selected time range - memoized to prevent infinite loops
   const filteredTransactions = useMemo(() => {
@@ -125,7 +134,7 @@ export const DashboardPage: React.FC = () => {
     const periodExpenses = filteredTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
-    
+
     console.log(`📊 [PERIOD] Income: ${periodIncome}, Expenses: ${periodExpenses}`);
     console.log(`📊 [PERIOD] Selected range: ${selectedTimeRange}, Start: ${customStartDate?.toISOString()}, End: ${customEndDate?.toISOString()}`);
     console.log(`📊 [PERIOD] Filtered transactions:`, filteredTransactions.map(t => ({ date: t.date, type: t.type, amount: t.amount, currency: t.currency })));
@@ -188,13 +197,19 @@ export const DashboardPage: React.FC = () => {
       }
     });
     
-    // Apply correct Cash formula: Previous Cumulative Cash + Current Period Income - Current Period Expenses - Cumulative Investments
-    const finalCash = cumulativeCashFromPreviousPeriods + periodIncome - periodExpenses - cumulativeInvestments;
+    // Apply correct Cash formula: Previous Cumulative Cash + Current Period Income - Current Period Expenses
+    // Investments are separate assets and don't reduce cash
+    const finalCash = cumulativeCashFromPreviousPeriods + periodIncome - periodExpenses;
     
     // Total Wealth = Cash + Total Cumulative Investments
     const totalWealth = finalCash + cumulativeInvestments;
     
     console.log(`📊 [CALCULATION] Previous Cumulative Cash: ${cumulativeCashFromPreviousPeriods}, Final Cash: ${finalCash}, Total Wealth: ${totalWealth}`);
+    
+    // DEBUG: Check for the -656 difference
+    const expectedCash = cumulativeCashFromPreviousPeriods + periodIncome - periodExpenses;
+    const difference = finalCash - expectedCash;
+    console.log(`🔍 [DEBUG] Expected Cash: ${expectedCash}, Actual Cash: ${finalCash}, Difference: ${difference}`);
     
     // Return the calculated values
     const summary = {
@@ -215,6 +230,8 @@ export const DashboardPage: React.FC = () => {
       finalCash,
       cumulativeInvestments,
       totalWealth,
+      expectedCash,
+      difference,
       sortedMonths: sortedMonths.map(([month, data]) => ({ month, ...data }))
     });
     
@@ -372,10 +389,15 @@ export const DashboardPage: React.FC = () => {
     
     updateSummaryWithConversion();
   }, [getFilteredSummary, baseCurrency, filteredTransactions, cumulativeTransactions, selectedTimeRange, customEndDate]);
-  const allTransactions = useMemo(() => 
-    filteredTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-    [filteredTransactions]
-  );
+  // Paginated transactions for Dashboard display
+  const paginatedTransactions = useMemo(() => {
+    const sorted = filteredTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return sorted.slice(startIndex, endIndex);
+  }, [filteredTransactions, currentPage, pageSize]);
+
+  const totalPages = Math.ceil(filteredTransactions.length / pageSize);
 
   // Get period name for display
   const getPeriodName = () => {
@@ -417,43 +439,150 @@ export const DashboardPage: React.FC = () => {
 
   const primaryCurrency = getPrimaryCurrency();
 
-  // Generate daily data for chart based on selected time range
-  const generateDailyData = () => {
-    const dailyData = [];
+  // Generate chart data with dynamic aggregation based on date range
+  const generateChartData = async () => {
+    if (filteredTransactions.length === 0) return [];
     
-    // Group transactions by date
-    const transactionsByDate: Record<string, { income: number; expenses: number }> = {};
+    // Calculate date range span
+    const startDate = customStartDate || new Date();
+    const endDate = customEndDate || new Date();
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    filteredTransactions.forEach(transaction => {
-      const dateKey = transaction.date;
-      if (!transactionsByDate[dateKey]) {
-        transactionsByDate[dateKey] = { income: 0, expenses: 0 };
+    console.log(`📊 [CHART] Date range: ${daysDiff} days`);
+    
+    // Determine aggregation level based on date range
+    let aggregationLevel: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    let groupKey: string;
+    let labelFormat: string;
+    
+    if (daysDiff <= 31) {
+      // ≤ 1 month: Show individual days
+      aggregationLevel = 'daily';
+      groupKey = 'date';
+      labelFormat = 'MMM d';
+    } else if (daysDiff <= 93) {
+      // ≤ 3 months: Show weeks
+      aggregationLevel = 'weekly';
+      groupKey = 'week';
+      labelFormat = 'MMM d';
+    } else if (daysDiff <= 365) {
+      // ≤ 1 year: Show months
+      aggregationLevel = 'monthly';
+      groupKey = 'month';
+      labelFormat = 'MMM yyyy';
+    } else {
+      // > 1 year: Show years
+      aggregationLevel = 'yearly';
+      groupKey = 'year';
+      labelFormat = 'yyyy';
+    }
+    
+    console.log(`📊 [CHART] Using ${aggregationLevel} aggregation`);
+    
+    // Group transactions by aggregation level
+    const groupedData: Record<string, { income: number; expenses: number; investments: number }> = {};
+    
+    // Convert all transactions to base currency and group them
+    for (const transaction of filteredTransactions) {
+      const date = new Date(transaction.date);
+      let groupKeyValue: string;
+      
+      switch (aggregationLevel) {
+        case 'daily':
+          groupKeyValue = transaction.date; // YYYY-MM-DD
+          break;
+        case 'weekly':
+          // Get start of week (Monday)
+          const weekStart = new Date(date);
+          weekStart.setDate(date.getDate() - date.getDay() + 1);
+          groupKeyValue = weekStart.toISOString().split('T')[0];
+          break;
+        case 'monthly':
+          groupKeyValue = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          break;
+        case 'yearly':
+          groupKeyValue = date.getFullYear().toString();
+          break;
       }
       
-      if (transaction.type === 'income') {
-        transactionsByDate[dateKey].income += transaction.amount;
-      } else {
-        transactionsByDate[dateKey].expenses += transaction.amount;
+      if (!groupedData[groupKeyValue]) {
+        groupedData[groupKeyValue] = { income: 0, expenses: 0, investments: 0 };
       }
-    });
+      
+      // Convert transaction amount to base currency
+      const convertedAmount = await currencyService.convertAmount(
+        transaction.amount, 
+        transaction.currency, 
+        baseCurrency
+      );
+      
+      if (transaction.type === 'income') {
+        groupedData[groupKeyValue].income += convertedAmount;
+      } else if (transaction.type === 'expense') {
+        groupedData[groupKeyValue].expenses += convertedAmount;
+      } else if (transaction.type === 'investment') {
+        groupedData[groupKeyValue].investments += convertedAmount;
+      }
+    }
     
     // Convert to array and sort by date
-    Object.entries(transactionsByDate)
-      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-      .forEach(([dateStr, amounts]) => {
-        const date = new Date(dateStr);
-        const dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        dailyData.push({ 
-          month: dateLabel, 
+    const chartData = Object.entries(groupedData)
+      .sort(([a], [b]) => {
+        if (aggregationLevel === 'yearly') {
+          return parseInt(a[0]) - parseInt(b[0]);
+        }
+        return new Date(a[0]).getTime() - new Date(b[0]).getTime();
+      })
+      .map(([dateKey, amounts]) => {
+        let label: string;
+        
+        if (aggregationLevel === 'yearly') {
+          label = dateKey;
+        } else {
+          const date = new Date(dateKey);
+          label = date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: aggregationLevel === 'daily' ? 'numeric' : undefined,
+            year: aggregationLevel === 'monthly' || aggregationLevel === 'yearly' ? 'numeric' : undefined
+          });
+        }
+        
+        return { 
+          month: label, 
           income: amounts.income, 
-          expenses: amounts.expenses 
-        });
+          expenses: amounts.expenses,
+          investments: amounts.investments
+        };
       });
     
-    return dailyData;
+    console.log(`📊 [CHART] Generated ${chartData.length} data points for ${aggregationLevel} view`);
+    return chartData;
   };
 
-  const chartData = generateDailyData();
+  const [chartData, setChartData] = useState([]);
+  const [chartTitle, setChartTitle] = useState('Monthly Overview');
+
+  // Generate chart data when dependencies change
+  useEffect(() => {
+    generateChartData().then(data => {
+      setChartData(data);
+      
+      // Update chart title based on aggregation level
+      const startDate = customStartDate || new Date();
+      const endDate = customEndDate || new Date();
+      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff <= 31) {
+        setChartTitle('Daily Overview');
+      } else if (daysDiff <= 93) {
+        setChartTitle('Weekly Overview');
+      } else if (daysDiff <= 365) {
+        setChartTitle('Monthly Overview');
+      } else {
+        setChartTitle('Yearly Overview');
+      }
+    });
+  }, [filteredTransactions, baseCurrency, customStartDate, customEndDate]);
 
 
   return <div>
@@ -481,9 +610,18 @@ export const DashboardPage: React.FC = () => {
                 startDate={customStartDate}
                 endDate={customEndDate}
                 placeholderText="Start Date"
-                className="bg-surface border border-border text-white rounded px-3 py-2 text-sm"
+                dateFormat="yyyy-MM-dd"
+                showYearDropdown
+                showMonthDropdown
+                dropdownMode="select"
+                yearDropdownItemNumber={15}
+                scrollableYearDropdown
+                className="bg-surface border border-border text-white rounded px-3 py-2 text-sm w-32"
                 wrapperClassName="w-auto"
                 calendarClassName="bg-surface border border-border text-white"
+                dayClassName={(date) => "text-white hover:bg-highlight/20"}
+                monthClassName={() => "text-white"}
+                yearClassName={() => "text-white"}
                 popperContainer={({ children }) => <div style={{ zIndex: 9999 }}>{children}</div>}
               />
               <span className="text-gray-400">to</span>
@@ -495,9 +633,18 @@ export const DashboardPage: React.FC = () => {
                 endDate={customEndDate}
                 minDate={customStartDate}
                 placeholderText="End Date"
-                className="bg-surface border border-border text-white rounded px-3 py-2 text-sm"
+                dateFormat="yyyy-MM-dd"
+                showYearDropdown
+                showMonthDropdown
+                dropdownMode="select"
+                yearDropdownItemNumber={15}
+                scrollableYearDropdown
+                className="bg-surface border border-border text-white rounded px-3 py-2 text-sm w-32"
                 wrapperClassName="w-auto"
                 calendarClassName="bg-surface border border-border text-white"
+                dayClassName={(date) => "text-white hover:bg-highlight/20"}
+                monthClassName={() => "text-white"}
+                yearClassName={() => "text-white"}
                 popperContainer={({ children }) => <div style={{ zIndex: 9999 }}>{children}</div>}
               />
             </div>
@@ -604,11 +751,42 @@ export const DashboardPage: React.FC = () => {
         </div>
       )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card title="Monthly Overview" className="min-h-[400px]">
+        <Card title={chartTitle} className="min-h-[400px]">
           <ExpenseChart data={chartData} />
         </Card>
         <Card title="Transactions" className="min-h-[400px]">
-          <TransactionList transactions={allTransactions} compact={true} />
+          <TransactionList transactions={paginatedTransactions} compact={true} />
+          
+          {/* Pagination Controls */}
+          {filteredTransactions.length > pageSize && (
+            <div className="mt-4 flex items-center justify-between pt-4 border-t border-border">
+              <div className="text-sm text-gray-400">
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredTransactions.length)} of {filteredTransactions.length} transactions
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 bg-surface border border-border text-white rounded text-sm hover:bg-border/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                
+                <span className="text-sm text-gray-400">
+                  Page {currentPage} of {totalPages}
+                </span>
+                
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 bg-surface border border-border text-white rounded text-sm hover:bg-border/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </div>;

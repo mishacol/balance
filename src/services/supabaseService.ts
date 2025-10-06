@@ -399,16 +399,146 @@ export class SupabaseService {
       const userId = await this.getCurrentUserId();
       if (!userId) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      let allTransactions: Transaction[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+
+      console.log(`🔄 [SUPABASE] Starting paginated fetch for user ${userId}`);
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', userId)
+          .order('date', { ascending: false })
+          .range(from, from + pageSize - 1);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        // Convert to Transaction format
+        const pageTransactions: Transaction[] = data.map(row => ({
+          id: row.id,
+          type: row.type,
+          amount: row.amount,
+          currency: row.currency,
+          category: row.category,
+          description: row.description,
+          date: row.date,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        }));
+
+        allTransactions = [...allTransactions, ...pageTransactions];
+        from += pageSize;
+
+        console.log(`📄 [SUPABASE] Fetched page ${Math.floor(from/pageSize)}: ${pageTransactions.length} transactions (total: ${allTransactions.length})`);
+
+        // If we got fewer than pageSize, we've reached the end
+        if (pageTransactions.length < pageSize) {
+          hasMore = false;
+        }
+      }
+
+      // 🚨 DEBUG: Check downloaded dates for corruption
+      console.log(`✅ [SUPABASE] Loaded ${allTransactions.length} total transactions`);
+      const suspiciousDates = allTransactions.filter(t => t.date.includes('2013-08-'));
+      if (suspiciousDates.length > 0) {
+        console.log(`🔍 [SUPABASE] August 2013 dates from DB:`, suspiciousDates.map(t => ({ id: t.id, date: t.date })));
+      }
+
+      const aprilEarly = allTransactions.filter(t => t.date >= '2013-04-01' && t.date <= '2013-04-22');
+      if (aprilEarly.length > 0) {
+        console.log(`🔍 [SUPABASE] April 1-22 transactions found:`, aprilEarly.length);
+      }
+      
+      return allTransactions;
+    } catch (error) {
+      console.error('❌ [SUPABASE] Get transactions failed:', error);
+      return [];
+    }
+  }
+
+  // New method for paginated transactions with server-side filtering
+  async getTransactionsPaginated(options: {
+    page: number;
+    pageSize: number;
+    searchQuery?: string;
+    typeFilter?: string;
+    categoryFilter?: string;
+    startDate?: string;
+    endDate?: string;
+    sortBy?: 'date' | 'amount' | 'created_at';
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<{
+    transactions: Transaction[];
+    totalCount: number;
+    hasMore: boolean;
+  }> {
+    try {
+      const userId = await this.getCurrentUserId();
+      if (!userId) throw new Error('User not authenticated');
+
+      const {
+        page = 1,
+        pageSize = 25,
+        searchQuery = '',
+        typeFilter = '',
+        categoryFilter = '',
+        startDate = '',
+        endDate = '',
+        sortBy = 'date',
+        sortOrder = 'desc'
+      } = options;
+
+      console.log(`🔄 [SUPABASE] Fetching paginated transactions: page ${page}, size ${pageSize}`);
+
+      // Build the query
+      let query = supabase
         .from('transactions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('date', { ascending: false });
+        .select('*', { count: 'exact' })
+        .eq('user_id', userId);
+
+      // Apply filters
+      if (searchQuery) {
+        query = query.or(`description.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%`);
+      }
+
+      if (typeFilter) {
+        query = query.eq('type', typeFilter);
+      }
+
+      if (categoryFilter) {
+        query = query.eq('category', categoryFilter);
+      }
+
+      if (startDate) {
+        query = query.gte('date', startDate);
+      }
+
+      if (endDate) {
+        query = query.lte('date', endDate);
+      }
+
+      // Apply sorting
+      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+      // Apply pagination
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
 
       if (error) throw error;
 
       // Convert to Transaction format
-      const transactions: Transaction[] = data.map(row => ({
+      const transactions: Transaction[] = (data || []).map(row => ({
         id: row.id,
         type: row.type,
         amount: row.amount,
@@ -420,17 +550,23 @@ export class SupabaseService {
         updated_at: row.updated_at,
       }));
 
-      // 🚨 DEBUG: Check downloaded dates for corruption
-      console.log(`✅ [SUPABASE] Loaded ${transactions.length} transactions`);
-      const suspiciousDates = transactions.filter(t => t.date.includes('2013-08-'));
-      if (suspiciousDates.length > 0) {
-        console.log(`🔍 [SUPABASE] August 2013 dates from DB:`, suspiciousDates.map(t => ({ id: t.id, date: t.date })));
-      }
-      
-      return transactions;
+      const totalCount = count || 0;
+      const hasMore = from + transactions.length < totalCount;
+
+      console.log(`✅ [SUPABASE] Paginated fetch: ${transactions.length} transactions (page ${page}/${Math.ceil(totalCount / pageSize)})`);
+
+      return {
+        transactions,
+        totalCount,
+        hasMore
+      };
     } catch (error) {
-      console.error('❌ [SUPABASE] Get transactions failed:', error);
-      return [];
+      console.error('❌ [SUPABASE] Paginated transactions failed:', error);
+      return {
+        transactions: [],
+        totalCount: 0,
+        hasMore: false
+      };
     }
   }
 

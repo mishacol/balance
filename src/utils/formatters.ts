@@ -21,16 +21,24 @@ export const formatCurrency = (amount: number, currency = 'USD'): string => {
 };
 export const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
+  const datePart = new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
   }).format(date);
+  const weekdayPart = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short'
+  }).format(date);
+  return `${datePart} - ${weekdayPart}`;
 };
 export const formatShortDate = (dateString: string): string => {
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
+  const datePart = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric'
   }).format(date);
+  const weekdayPart = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short'
+  }).format(date);
+  return `${datePart} - ${weekdayPart}`;
 };

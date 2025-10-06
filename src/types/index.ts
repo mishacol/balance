@@ -26,3 +26,10 @@ export interface FinancialSummary {
   expensesByCurrency: Record<string, number>;
   investmentsByCurrency: Record<string, number>;
 }
+
+// Global window interface for debugging
+declare global {
+  interface Window {
+    useTransactionStore: any;
+  }
+}

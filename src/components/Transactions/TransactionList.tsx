@@ -13,6 +13,8 @@ interface TransactionListProps {
   selectedTimeRange?: string;
   customStartDate?: Date | null;
   customEndDate?: Date | null;
+  isLoading?: boolean;
+  useExternalPagination?: boolean; // New prop to disable internal pagination
 }
 export const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
@@ -21,10 +23,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   categoryFilter = '',
   selectedTimeRange = 'this-month',
   customStartDate = null,
-  customEndDate = null
+  customEndDate = null,
+  isLoading = false,
+  useExternalPagination = false
 }) => {
   const navigate = useNavigate();
-  const { deleteTransaction, addTransaction, baseCurrency } = useTransactionStore();
+  const { deleteTransaction, addTransaction, baseCurrency, loadTransactionsFromSupabase } = useTransactionStore();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [averageType, setAverageType] = useState<'per-transaction' | 'per-day'>('per-transaction');
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,11 +67,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         return sortDirection === 'asc' ? comparison : -comparison;
       });
 
-  // Pagination logic - only for non-compact mode
-  const totalPages = compact ? 1 : Math.ceil(sortedTransactions.length / itemsPerPage);
-  const startIndex = compact ? 0 : (currentPage - 1) * itemsPerPage;
-  const endIndex = compact ? sortedTransactions.length : startIndex + itemsPerPage;
-  const paginatedTransactions = compact ? sortedTransactions : sortedTransactions.slice(startIndex, endIndex);
+  // Pagination logic - only for non-compact mode and when not using external pagination
+  const totalPages = compact || useExternalPagination ? 1 : Math.ceil(sortedTransactions.length / itemsPerPage);
+  const startIndex = compact || useExternalPagination ? 0 : (currentPage - 1) * itemsPerPage;
+  const endIndex = compact || useExternalPagination ? sortedTransactions.length : startIndex + itemsPerPage;
+  const paginatedTransactions = compact || useExternalPagination ? sortedTransactions : sortedTransactions.slice(startIndex, endIndex);
 
   // Reset to first page when transactions change
   useEffect(() => {
@@ -134,17 +138,43 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     }
   };
 
-  const handleDuplicate = (transaction: Transaction) => {
-    const duplicatedTransaction = {
-      type: transaction.type,
-      amount: transaction.amount,
-      currency: transaction.currency,
-      category: transaction.category,
-      description: transaction.description,
-      date: transaction.date // Keep the original date!
-    };
-    addTransaction(duplicatedTransaction);
-    setOpenDropdown(null);
+  const handleDuplicate = async (transaction: Transaction) => {
+    // FUCK ALL THE DUPLICATE PREVENTION BULLSHIT - JUST ADD IT DIRECTLY TO SUPABASE
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        alert('Not authenticated');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          type: transaction.type,
+          amount: transaction.amount,
+          currency: transaction.currency,
+          category: transaction.category,
+          description: transaction.description,
+          date: transaction.date
+        });
+
+      if (error) {
+        console.error('Duplicate failed:', error);
+        alert('Failed to duplicate transaction: ' + error.message);
+        return;
+      }
+
+      // Force reload the transactions
+      await loadTransactionsFromSupabase();
+      setOpenDropdown(null);
+      
+    } catch (error) {
+      console.error('Duplicate error:', error);
+      alert('Error duplicating transaction: ' + error);
+    }
   };
 
   const toggleDropdown = (transactionId: string) => {
@@ -364,7 +394,17 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             </tr>
           </thead>
         <tbody className="font-mono">
-          {paginatedTransactions.map(transaction => <tr key={transaction.id} className="border-b border-border hover:bg-border/30 transition-colors">
+          {isLoading ? (
+            <tr>
+              <td colSpan={compact ? 4 : 5} className="py-8 text-center">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current mr-2"></div>
+                  <span className="text-gray-400">Loading transactions...</span>
+                </div>
+              </td>
+            </tr>
+          ) : (
+            paginatedTransactions.map(transaction => <tr key={transaction.id} className="border-b border-border hover:bg-border/30 transition-colors">
               <td className="py-3 text-center w-16">
                 {transaction.type === 'income' ? <div className="flex items-center justify-center">
                     <span className="bg-income/10 p-1 rounded">
@@ -430,20 +470,16 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                   )}
                 </div>
               </td>}
-            </tr>)}
+            </tr>)
+          )}
         </tbody>
       </table>
       </div>
 
-      {/* Transaction counter for compact mode */}
-      {compact && transactions.length > 0 && (
-        <div className="mt-2 text-sm text-gray-400 text-center">
-          {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
-        </div>
-      )}
+      {/* Transaction counter for compact mode - removed redundant text since pagination shows count */}
 
-      {/* Pagination Controls - only show in non-compact mode */}
-      {!compact && transactions.length > 0 && (
+      {/* Pagination Controls - only show in non-compact mode and when not using external pagination */}
+      {!compact && !useExternalPagination && transactions.length > 0 && (
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-400">
