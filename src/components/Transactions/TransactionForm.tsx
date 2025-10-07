@@ -19,7 +19,8 @@ export const TransactionForm: React.FC = () => {
   
   // Check if we're editing an existing transaction
   const isEditing = Boolean(id);
-  const existingTransaction = isEditing ? transactions.find(t => t.id === id) : null;
+  const [existingTransaction, setExistingTransaction] = useState<Transaction | null>(null);
+  const [isLoadingTransaction, setIsLoadingTransaction] = useState(false);
 
   const {
     register,
@@ -43,6 +44,63 @@ export const TransactionForm: React.FC = () => {
       currency: 'USD',
     },
   });
+
+  // Fetch transaction data when editing
+  useEffect(() => {
+    if (isEditing && id) {
+      const fetchTransaction = async () => {
+        setIsLoadingTransaction(true);
+        try {
+          // First try to find in store (in case it's in current page)
+          const storeTransaction = transactions.find(t => t.id === id);
+          if (storeTransaction) {
+            setExistingTransaction(storeTransaction);
+            return;
+          }
+
+          // If not in store, fetch from Supabase
+          const { supabase } = await import('../../lib/supabase');
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (!user) {
+            console.error('User not authenticated');
+            return;
+          }
+
+          const { data, error } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .single();
+
+          if (error) {
+            console.error('Error fetching transaction:', error);
+            return;
+          }
+
+          if (data) {
+            const transaction: Transaction = {
+              id: data.id,
+              type: data.type,
+              amount: data.amount,
+              currency: data.currency,
+              category: data.category,
+              description: data.description,
+              date: data.date
+            };
+            setExistingTransaction(transaction);
+          }
+        } catch (error) {
+          console.error('Error fetching transaction:', error);
+        } finally {
+          setIsLoadingTransaction(false);
+        }
+      };
+
+      fetchTransaction();
+    }
+  }, [isEditing, id, transactions]);
 
   // Populate form with existing transaction data when editing
   useEffect(() => {
@@ -286,7 +344,8 @@ export const TransactionForm: React.FC = () => {
             { value: 'games-apps', label: 'Games & Apps' },
             { value: 'hobbies', label: 'Hobbies' },
             { value: 'music-streaming', label: 'Music/Streaming' },
-            { value: 'sports-recreation', label: 'Sports/Recreation' },
+            { value: 'sports-fitness', label: 'Sports/Fitness' },
+            { value: 'recreation', label: 'Recreation' },
             { value: 'vacation-travel', label: 'Vacation/Travel' },
             { value: 'movies', label: 'Movies' },
             { value: 'concerts', label: 'Concerts' },
@@ -442,9 +501,9 @@ export const TransactionForm: React.FC = () => {
 
   return <div className="bg-surface border border-border rounded-lg p-6">
       <h2 className="text-xl font-bold mb-6">
-        {isEditing ? 'Edit Transaction' : 'Add Transaction'}
+        {isLoadingTransaction ? 'Loading Transaction...' : (isEditing ? 'Edit Transaction' : 'Add Transaction')}
       </h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" style={{ opacity: isLoadingTransaction ? 0.5 : 1, pointerEvents: isLoadingTransaction ? 'none' : 'auto' }}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">
@@ -518,7 +577,7 @@ export const TransactionForm: React.FC = () => {
                   className="w-full bg-background border border-border rounded-md px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-highlight"
                   wrapperClassName="w-full"
                   calendarClassName="bg-surface border border-border text-white"
-                  dayClassName={(date) => "text-white hover:bg-highlight/20"}
+                  dayClassName={() => "text-white hover:bg-highlight/20"}
                   monthClassName={() => "text-white"}
                   yearClassName={() => "text-white"}
                 />

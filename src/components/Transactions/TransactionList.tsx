@@ -15,6 +15,10 @@ interface TransactionListProps {
   customEndDate?: Date | null;
   isLoading?: boolean;
   useExternalPagination?: boolean; // New prop to disable internal pagination
+  onRefresh?: () => void; // Callback to refresh paginated data
+  onSilentRefresh?: () => void; // Silent refresh without loading spinner
+  totalCount?: number; // Total count for external pagination
+  totalAmount?: number; // Total amount for external pagination (all filtered transactions)
 }
 export const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
@@ -25,7 +29,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   customStartDate = null,
   customEndDate = null,
   isLoading = false,
-  useExternalPagination = false
+  useExternalPagination = false,
+  onRefresh,
+  onSilentRefresh,
+  totalCount,
+  totalAmount
 }) => {
   const navigate = useNavigate();
   const { deleteTransaction, addTransaction, baseCurrency, loadTransactionsFromSupabase } = useTransactionStore();
@@ -134,6 +142,17 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   const handleDelete = async (transactionId: string) => {
     if (window.confirm('Are you sure you want to delete this transaction?')) {
       await deleteTransaction(transactionId);
+      
+      // 🚨 CRITICAL FIX: Silent refresh to avoid loading spinner
+      if (onSilentRefresh) {
+        onSilentRefresh();
+      } else if (onRefresh) {
+        onRefresh();
+      } else {
+        // Fallback to page reload if no callback
+        window.location.reload();
+      }
+      
       setOpenDropdown(null);
     }
   };
@@ -167,8 +186,17 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         return;
       }
 
-      // Force reload the transactions
-      await loadTransactionsFromSupabase();
+      // 🚨 CRITICAL FIX: Silent refresh to avoid loading spinner
+      if (onSilentRefresh) {
+        onSilentRefresh();
+      } else if (onRefresh) {
+        onRefresh();
+      } else {
+        // Fallback: reload store and page
+        await loadTransactionsFromSupabase();
+        window.location.reload();
+      }
+      
       setOpenDropdown(null);
       
     } catch (error) {
@@ -314,12 +342,22 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           ? transactions.filter(t => t.type === effectiveType)
           : transactions;
         
-        console.log('🔍 Transactions for summary:', filteredForSummary.length, 'out of', transactions.length);
+        // Use totalCount for external pagination, otherwise use filtered length
+        const displayCount = useExternalPagination && totalCount !== undefined 
+          ? (effectiveType ? totalCount : totalCount) // For now, assume totalCount is already filtered by server
+          : filteredForSummary.length;
+        
+        // Use external totalAmount for external pagination, otherwise use convertedTotal
+        const displayTotal = useExternalPagination && totalAmount !== undefined 
+          ? totalAmount 
+          : convertedTotal;
+        
+        console.log('🔍 Transactions for summary:', filteredForSummary.length, 'out of', transactions.length, 'totalCount:', totalCount, 'totalAmount:', totalAmount);
         
         return (
           <div className="mb-4 p-3 bg-surface border border-border rounded-lg">
             <div className="flex items-center justify-between text-xs font-semibold text-gray-300">
-              <span>Total Transactions: {filteredForSummary.length}</span>
+              <span>Total Transactions: {displayCount}</span>
               <span>
                 Total: {isConverting ? (
                   <span className="flex items-center">
@@ -327,7 +365,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     Converting...
                   </span>
                 ) : (
-                  formatCurrency(convertedTotal, baseCurrency)
+                  formatCurrency(displayTotal, baseCurrency)
                 )}
               </span>
               <div className="flex items-center space-x-2">
@@ -339,10 +377,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     </span>
                   ) : (
                     formatCurrency(
-                      filteredForSummary.length > 0 
+                      displayCount > 0 
                         ? averageType === 'per-transaction'
-                          ? convertedTotal / filteredForSummary.length
-                          : convertedTotal / daysInPeriod
+                          ? displayTotal / displayCount
+                          : displayTotal / daysInPeriod
                         : 0,
                       baseCurrency
                     )

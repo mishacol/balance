@@ -7,6 +7,7 @@ import { TransactionsPage } from './components/Transactions/TransactionsPage';
 import { TransactionForm } from './components/Transactions/TransactionForm';
 import { BackupPage } from './components/Backup/BackupPage';
 import { SettingsPage } from './components/Settings/SettingsPage';
+import { AnalyticsPage } from './components/Analytics/AnalyticsPage';
 import { ProfilePage } from './components/Profile/ProfilePage';
 export function AppRouter() {
   return <BrowserRouter>
@@ -27,14 +28,7 @@ export function AppRouter() {
               <BackupPage />
             </Layout>} />
         <Route path="/analytics" element={<Layout>
-              <div className="text-center py-12">
-                <h2 className="text-xl font-bold mb-4">
-                  Analytics Coming Soon
-                </h2>
-                <p className="text-gray-400">
-                  This feature is under development.
-                </p>
-              </div>
+              <AnalyticsPage />
             </Layout>} />
         <Route path="/settings" element={<Layout>
               <SettingsPage />

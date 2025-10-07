@@ -30,19 +30,66 @@ export const TransactionsPage: React.FC = () => {
   });
   const [customStartDate, setCustomStartDate] = useState<Date | null>(() => {
     const saved = localStorage.getItem('transactions-custom-start-date');
-    return saved ? new Date(saved) : null;
+    return saved ? new Date(saved + 'T00:00:00') : null; // local midnight
   });
   const [customEndDate, setCustomEndDate] = useState<Date | null>(() => {
     const saved = localStorage.getItem('transactions-custom-end-date');
-    return saved ? new Date(saved) : null;
+    return saved ? new Date(saved + 'T00:00:00') : null; // local midnight
   });
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const saved = localStorage.getItem('transactions-current-page');
+    return saved ? parseInt(saved, 10) : 1;
+  });
   const [pageSize] = useState(25);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [paginatedTransactions, setPaginatedTransactions] = useState<any[]>([]);
+  
+  // Calculate total amount for all filtered transactions (not just current page)
+  const [totalAmount, setTotalAmount] = useState(0);
+  
+  const calculateTotalAmount = useCallback(async () => {
+    try {
+      const { isUsingSupabase } = useTransactionStore.getState();
+      const shouldUseSupabase = isUsingSupabase || (await supabaseService.getUserId()) !== null;
+      
+      if (shouldUseSupabase) {
+        // Get all transactions matching the current filters (not paginated)
+        const { startDate, endDate } = getDateRange();
+        
+        const result = await supabaseService.getTransactionsPaginated({
+          page: 1,
+          pageSize: 10000, // Get all transactions
+          searchQuery: debouncedSearchQuery,
+          typeFilter,
+          categoryFilter,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          sortBy: 'date',
+          sortOrder: 'desc'
+        });
+        
+        // Calculate total amount
+        const total = result.transactions.reduce((sum, t) => sum + t.amount, 0);
+        setTotalAmount(total);
+      } else {
+        // For local storage, calculate from filtered transactions
+        const filtered = getFilteredTransactions();
+        const total = filtered.reduce((sum, t) => sum + t.amount, 0);
+        setTotalAmount(total);
+      }
+    } catch (error) {
+      console.error('Error calculating total amount:', error);
+      setTotalAmount(0);
+    }
+  }, [debouncedSearchQuery, typeFilter, categoryFilter, selectedTimeRange, customStartDate, customEndDate]);
+
+  // Calculate total amount when filters change
+  useEffect(() => {
+    calculateTotalAmount();
+  }, [calculateTotalAmount]);
 
   // Debounced search effect (300ms delay)
   useEffect(() => {
@@ -59,41 +106,50 @@ export const TransactionsPage: React.FC = () => {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
     
+    console.log(`🔍 [DATE RANGE DEBUG] selectedTimeRange: ${selectedTimeRange}, customStartDate: ${customStartDate?.toISOString()}, customEndDate: ${customEndDate?.toISOString()}`);
+    
     switch (selectedTimeRange) {
       case 'all-time':
+        console.log(`🔍 [DATE RANGE] Using all-time range`);
         return { startDate: null, endDate: null };
       case 'this-month':
-        const thisMonthStart = new Date(currentYear, currentMonth, 1);
-        const thisMonthEnd = new Date(currentYear, currentMonth + 1, 0);
+        const thisMonthStart = new Date(Date.UTC(currentYear, currentMonth, 1));
+        const thisMonthEnd = new Date(Date.UTC(currentYear, currentMonth + 1, 0));
+        console.log(`🔍 [DATE RANGE] Using this-month: ${thisMonthStart.toISOString().split('T')[0]} to ${thisMonthEnd.toISOString().split('T')[0]}`);
         return { startDate: thisMonthStart.toISOString().split('T')[0], endDate: thisMonthEnd.toISOString().split('T')[0] };
       case 'last-month':
         const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
         const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-        const lastMonthStart = new Date(lastMonthYear, lastMonth, 1);
-        const lastMonthEnd = new Date(lastMonthYear, lastMonth + 1, 0);
+        const lastMonthStart = new Date(Date.UTC(lastMonthYear, lastMonth, 1));
+        const lastMonthEnd = new Date(Date.UTC(lastMonthYear, lastMonth + 1, 0));
+        console.log(`🔍 [DATE RANGE] Using last-month: ${lastMonthStart.toISOString().split('T')[0]} to ${lastMonthEnd.toISOString().split('T')[0]}`);
         return { startDate: lastMonthStart.toISOString().split('T')[0], endDate: lastMonthEnd.toISOString().split('T')[0] };
       case 'this-year':
-        const yearStart = new Date(currentYear, 0, 1);
-        const yearEnd = new Date(currentYear, 11, 31);
+        const yearStart = new Date(Date.UTC(currentYear, 0, 1));
+        const yearEnd = new Date(Date.UTC(currentYear, 11, 31));
+        console.log(`🔍 [DATE RANGE] Using this-year: ${yearStart.toISOString().split('T')[0]} to ${yearEnd.toISOString().split('T')[0]}`);
         return { startDate: yearStart.toISOString().split('T')[0], endDate: yearEnd.toISOString().split('T')[0] };
       case 'last-transactions':
+        console.log(`🔍 [DATE RANGE] Using last-transactions range`);
         return { startDate: null, endDate: null };
       case 'custom':
         if (customStartDate && customEndDate) {
-          return { 
-            startDate: customStartDate.toISOString().split('T')[0], 
-            endDate: customEndDate.toISOString().split('T')[0] 
-          };
+          const start = customStartDate.toLocaleDateString('en-CA');
+          const end = customEndDate.toLocaleDateString('en-CA');
+          console.log(`🔍 [DATE RANGE] Using custom: ${start} to ${end}`);
+          return { startDate: start, endDate: end };
         }
+        console.log(`🔍 [DATE RANGE] Custom dates not set, returning null range`);
         return { startDate: null, endDate: null };
       default:
+        console.log(`🔍 [DATE RANGE] Unknown range: ${selectedTimeRange}, returning null range`);
         return { startDate: null, endDate: null };
     }
   }, [selectedTimeRange, customStartDate, customEndDate]);
 
   // Load paginated transactions when filters change
-  const loadPaginatedTransactions = useCallback(async () => {
-    setIsLoadingTransactions(true);
+  const loadPaginatedTransactions = useCallback(async (silent = false) => {
+    if (!silent) setIsLoadingTransactions(true);
     try {
       const { isUsingSupabase } = useTransactionStore.getState();
       
@@ -103,27 +159,47 @@ export const TransactionsPage: React.FC = () => {
       const shouldUseSupabase = isUsingSupabase || (await supabaseService.getUserId()) !== null;
       
       if (shouldUseSupabase) {
-        // Get date range for filtering
-        const { startDate, endDate } = getDateRange();
-        
-        console.log(`🔍 [PAGINATION DEBUG] Date range: ${startDate} to ${endDate}`);
-        
-        const result = await supabaseService.getTransactionsPaginated({
-          page: currentPage,
-          pageSize,
-          searchQuery: debouncedSearchQuery,
-          typeFilter,
-          categoryFilter,
-          startDate: startDate || undefined,
-          endDate: endDate || undefined,
-          sortBy: 'date',
-          sortOrder: 'desc'
-        });
-        
-        setPaginatedTransactions(result.transactions);
-        setTotalCount(result.totalCount);
-        
-        console.log(`🔍 [PAGINATION] Loaded ${result.transactions.length} transactions, total: ${result.totalCount}`);
+        // Special handling for "Last Transactions" - get 50 most recent by timestamp
+        if (selectedTimeRange === 'last-transactions') {
+          const result = await supabaseService.getTransactionsPaginated({
+            page: 1, // Always get first page
+            pageSize: 50, // Limit to 50 transactions
+            searchQuery: debouncedSearchQuery,
+            typeFilter,
+            categoryFilter,
+            startDate: undefined,
+            endDate: undefined,
+            sortBy: 'created_at', // Sort by timestamp instead of date
+            sortOrder: 'desc'
+          });
+          
+          setPaginatedTransactions(result.transactions);
+          setTotalCount(Math.min(result.totalCount, 50)); // Cap total count at 50
+          
+          console.log(`🔍 [LAST TRANSACTIONS] Loaded ${result.transactions.length} transactions (limited to 50)`);
+        } else {
+          // Get date range for filtering
+          const { startDate, endDate } = getDateRange();
+          
+          console.log(`🔍 [PAGINATION DEBUG] Date range: ${startDate} to ${endDate}`);
+          
+          const result = await supabaseService.getTransactionsPaginated({
+            page: currentPage,
+            pageSize,
+            searchQuery: debouncedSearchQuery,
+            typeFilter,
+            categoryFilter,
+            startDate: startDate || undefined,
+            endDate: endDate || undefined,
+            sortBy: 'date',
+            sortOrder: 'desc'
+          });
+          
+          setPaginatedTransactions(result.transactions);
+          setTotalCount(result.totalCount);
+          
+          console.log(`🔍 [PAGINATION] Loaded ${result.transactions.length} transactions, total: ${result.totalCount}`);
+        }
       } else {
         // For local storage, use existing filtered logic but paginate it
         const filtered = getFilteredTransactions();
@@ -140,7 +216,7 @@ export const TransactionsPage: React.FC = () => {
       setPaginatedTransactions([]);
       setTotalCount(0);
     } finally {
-      setIsLoadingTransactions(false);
+      if (!silent) setIsLoadingTransactions(false);
     }
   }, [currentPage, debouncedSearchQuery, typeFilter, categoryFilter, selectedTimeRange, customStartDate, customEndDate]);
 
@@ -185,9 +261,12 @@ export const TransactionsPage: React.FC = () => {
     localStorage.setItem('transactions-time-range', selectedTimeRange);
   }, [selectedTimeRange]);
 
+
   useEffect(() => {
     if (customStartDate) {
-      localStorage.setItem('transactions-custom-start-date', customStartDate.toISOString());
+      // Store as plain YYYY-MM-DD (local date)
+      const localDateStr = customStartDate.toLocaleDateString('en-CA'); // outputs "YYYY-MM-DD"
+      localStorage.setItem('transactions-custom-start-date', localDateStr);
     } else {
       localStorage.removeItem('transactions-custom-start-date');
     }
@@ -195,11 +274,17 @@ export const TransactionsPage: React.FC = () => {
 
   useEffect(() => {
     if (customEndDate) {
-      localStorage.setItem('transactions-custom-end-date', customEndDate.toISOString());
+      // Store as plain YYYY-MM-DD (local date)
+      const localDateStr = customEndDate.toLocaleDateString('en-CA'); // outputs "YYYY-MM-DD"
+      localStorage.setItem('transactions-custom-end-date', localDateStr);
     } else {
       localStorage.removeItem('transactions-custom-end-date');
     }
   }, [customEndDate]);
+
+  useEffect(() => {
+    localStorage.setItem('transactions-current-page', currentPage.toString());
+  }, [currentPage]);
 
   // Manual reset function - only resets when user explicitly chooses
   const resetFilters = () => {
@@ -383,7 +468,8 @@ export const TransactionsPage: React.FC = () => {
         { value: 'games-apps', label: 'Games/Apps' },
         { value: 'hobbies', label: 'Hobbies' },
         { value: 'music-streaming', label: 'Music/Streaming' },
-        { value: 'sports-recreation', label: 'Sports/Recreation' },
+        { value: 'sports-fitness', label: 'Sports/Fitness' },
+        { value: 'recreation', label: 'Recreation' },
         { value: 'vacation-travel', label: 'Vacation/Travel' },
         { value: 'movies', label: 'Movies' },
         { value: 'concerts', label: 'Concerts' },
@@ -497,7 +583,7 @@ export const TransactionsPage: React.FC = () => {
           'childcare': ['babysitting', 'child-support', 'daycare', 'kids-activities', 'school-supplies', 'toys-games'],
           'clothing-footwear': ['clothing', 'shoes'],
           'education': ['books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition'],
-          'entertainment': ['books-magazines', 'concerts', 'games-apps', 'hobbies', 'movies', 'music-streaming', 'night-clubs', 'sports-recreation', 'theaters', 'vacation-travel'],
+          'entertainment': ['books-magazines', 'concerts', 'games-apps', 'hobbies', 'movies', 'music-streaming', 'night-clubs', 'sports-fitness', 'recreation', 'theaters', 'vacation-travel'],
           'financial-obligations': ['bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes'],
           'food-dining': ['alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
           'healthcare': ['dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'pharmacy', 'prescriptions', 'therapy-counseling', 'vision'],
@@ -632,7 +718,8 @@ export const TransactionsPage: React.FC = () => {
       { value: 'games-apps', label: 'Games & Apps' },
       { value: 'hobbies', label: 'Hobbies' },
       { value: 'music-streaming', label: 'Music/Streaming' },
-      { value: 'sports-recreation', label: 'Sports/Recreation' },
+      { value: 'sports-fitness', label: 'Sports/Fitness' },
+      { value: 'recreation', label: 'Recreation' },
       { value: 'vacation-travel', label: 'Vacation/Travel' },
       { value: 'movies', label: 'Movies' },
       { value: 'concerts', label: 'Concerts' },
@@ -768,7 +855,7 @@ export const TransactionsPage: React.FC = () => {
         const expenseSubs = ['business-travel', 'equipment', 'marketing-advertising', 'office-supplies', 'professional-fees', 'software-subscriptions',
           'charitable-subscriptions', 'donations', 'gifts', 'charity', 'babysitting', 'child-support', 'daycare', 'kids-activities', 'school-supplies', 'toys-games',
           'books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition',
-          'books-magazines', 'games-apps', 'hobbies', 'music-streaming', 'sports-recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs', 'event-tickets',
+          'books-magazines', 'games-apps', 'hobbies', 'music-streaming', 'sports-fitness', 'recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs', 'event-tickets',
           'bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes',
           'alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants', 'snacks-candies',
           'dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy',
@@ -1036,7 +1123,14 @@ export const TransactionsPage: React.FC = () => {
                 <select 
                   className="bg-surface border border-border text-white rounded px-3 py-2 text-sm min-w-[140px]"
                   value={selectedTimeRange}
-                  onChange={(e) => setSelectedTimeRange(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedTimeRange(e.target.value);
+                    // Clear custom dates when selecting predefined periods
+                    if (e.target.value !== 'custom') {
+                      setCustomStartDate(null);
+                      setCustomEndDate(null);
+                    }
+                  }}
                 >
               <option value="all-time">All Time</option>
               <option value="this-month">This Month</option>
@@ -1119,10 +1213,14 @@ export const TransactionsPage: React.FC = () => {
           customEndDate={customEndDate}
           isLoading={isLoadingTransactions}
           useExternalPagination={true}
+          onRefresh={loadPaginatedTransactions}
+          onSilentRefresh={() => loadPaginatedTransactions(true)}
+          totalCount={totalCount}
+          totalAmount={totalAmount}
         />
         
         {/* Pagination Controls */}
-        {totalCount > pageSize && (
+        {totalCount > pageSize && selectedTimeRange !== 'last-transactions' && (
           <div className="mt-6 flex items-center justify-between">
             <div className="text-sm text-gray-400">
               Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} transactions

@@ -20,9 +20,17 @@ export const DashboardPage: React.FC = () => {
     console.log(`🔍 [DEBUG] Current month/year:`, new Date().getMonth() + 1, new Date().getFullYear());
   }
   
-  const [selectedTimeRange, setSelectedTimeRange] = useState('this-month');
-  const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
-  const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
+  const [selectedTimeRange, setSelectedTimeRange] = useState(() => {
+    return localStorage.getItem('dashboard-time-range') || 'this-month';
+  });
+  const [customStartDate, setCustomStartDate] = useState<Date | null>(() => {
+    const saved = localStorage.getItem('dashboard-custom-start-date');
+    return saved ? new Date(saved + 'T00:00:00') : null; // local midnight
+  });
+  const [customEndDate, setCustomEndDate] = useState<Date | null>(() => {
+    const saved = localStorage.getItem('dashboard-custom-end-date');
+    return saved ? new Date(saved + 'T00:00:00') : null; // local midnight
+  });
   const [summary, setSummary] = useState({ 
     totalIncome: 0, 
     totalExpenses: 0, 
@@ -38,6 +46,31 @@ export const DashboardPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(25);
   
+  // Save dashboard state to localStorage
+  useEffect(() => {
+    localStorage.setItem('dashboard-time-range', selectedTimeRange);
+  }, [selectedTimeRange]);
+
+  useEffect(() => {
+    if (customStartDate) {
+      // Store as plain YYYY-MM-DD (local date)
+      const localDateStr = customStartDate.toLocaleDateString('en-CA'); // outputs "YYYY-MM-DD"
+      localStorage.setItem('dashboard-custom-start-date', localDateStr);
+    } else {
+      localStorage.removeItem('dashboard-custom-start-date');
+    }
+  }, [customStartDate]);
+
+  useEffect(() => {
+    if (customEndDate) {
+      // Store as plain YYYY-MM-DD (local date)
+      const localDateStr = customEndDate.toLocaleDateString('en-CA'); // outputs "YYYY-MM-DD"
+      localStorage.setItem('dashboard-custom-end-date', localDateStr);
+    } else {
+      localStorage.removeItem('dashboard-custom-end-date');
+    }
+  }, [customEndDate]);
+
   // Reset page when time range changes
   useEffect(() => {
     setCurrentPage(1);
@@ -65,7 +98,7 @@ export const DashboardPage: React.FC = () => {
           return transactionYear === currentYear;
         case 'custom':
           if (customStartDate && customEndDate) {
-            // Normalize dates to only compare date parts (remove time components)
+            // Use local date comparison
             const transactionDateOnly = new Date(transactionDate.getFullYear(), transactionDate.getMonth(), transactionDate.getDate());
             const startDateOnly = new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate());
             const endDateOnly = new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate());
@@ -755,7 +788,14 @@ export const DashboardPage: React.FC = () => {
           <ExpenseChart data={chartData} />
         </Card>
         <Card title="Transactions" className="min-h-[400px]">
-          <TransactionList transactions={paginatedTransactions} compact={true} />
+          <TransactionList 
+            transactions={paginatedTransactions} 
+            compact={true} 
+            onRefresh={() => window.location.reload()}
+            onSilentRefresh={() => window.location.reload()}
+            totalCount={filteredTransactions.length}
+            totalAmount={filteredTransactions.reduce((sum, t) => sum + t.amount, 0)}
+          />
           
           {/* Pagination Controls */}
           {filteredTransactions.length > pageSize && (
