@@ -23,24 +23,48 @@ interface IncomeStats {
   periodDays: number;
 }
 
-const INCOME_COLORS = [
-  '#00ff41', // Green - Salary
-  '#00d4ff', // Cyan - Freelance
-  '#ff6b35', // Orange - Investments
-  '#ffd700', // Gold - Business
-  '#ff69b4', // Pink - Rental
-  '#9370db', // Purple - Other
-  '#20b2aa', // Teal - Bonuses
-  '#ffa500', // Orange - Commissions
+// Consistent color mapping for income sources
+const INCOME_SOURCE_COLORS: Record<string, string> = {
+  'salary': '#00ff41',           // Green
+  'freelance': '#00d4ff',        // Cyan
+  'investments': '#ff6b35',      // Orange
+  'business': '#ffd700',         // Gold
+  'rental': '#ff69b4',           // Pink
+  'other': '#9370db',            // Purple
+  'bonuses': '#20b2aa',          // Teal
+  'commissions': '#ffa500'       // Orange
+};
+
+// Fallback colors for unmapped sources
+const FALLBACK_COLORS = [
+  '#00ff41', '#00d4ff', '#ff6b35', '#ffd700',
+  '#ff69b4', '#9370db', '#20b2aa', '#ffa500'
 ];
 
-export const IncomeAnalysisWidget: React.FC = () => {
+// Helper function to get consistent color for income source
+const getIncomeSourceColor = (source: string, index: number = 0): string => {
+  return INCOME_SOURCE_COLORS[source.toLowerCase()] || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+};
+
+interface IncomeAnalysisWidgetProps {
+  autoExpand?: boolean;
+  initialPeriod?: string;
+  initialCustomStartDate?: Date | null;
+  initialCustomEndDate?: Date | null;
+}
+
+export const IncomeAnalysisWidget: React.FC<IncomeAnalysisWidgetProps> = ({ 
+  autoExpand = false,
+  initialPeriod = 'this-month',
+  initialCustomStartDate = null,
+  initialCustomEndDate = null
+}) => {
   const { transactions, baseCurrency } = useTransactionStore();
   
   // Period selection state
-  const [selectedPeriod, setSelectedPeriod] = useState('this-month');
-  const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
-  const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState(initialPeriod);
+  const [customStartDate, setCustomStartDate] = useState<Date | null>(initialCustomStartDate);
+  const [customEndDate, setCustomEndDate] = useState<Date | null>(initialCustomEndDate);
   
   // Analysis data state
   const [incomeSourceData, setIncomeSourceData] = useState<IncomeSourceData[]>([]);
@@ -54,8 +78,7 @@ export const IncomeAnalysisWidget: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Expandable sections state
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isSourcesExpanded, setIsSourcesExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(autoExpand);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
 
@@ -67,7 +90,7 @@ export const IncomeAnalysisWidget: React.FC = () => {
     switch (selectedPeriod) {
       case 'this-month':
         const thisMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-        const thisMonthEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0)); // Last day of current month
+        const thisMonthEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())); // Today (days elapsed so far)
         return { start: thisMonthStart, end: thisMonthEnd };
       
       case 'last-month':
@@ -77,7 +100,7 @@ export const IncomeAnalysisWidget: React.FC = () => {
       
       case 'this-year':
         const thisYearStart = new Date(Date.UTC(now.getFullYear(), 0, 1));
-        const thisYearEnd = new Date(Date.UTC(now.getFullYear(), 11, 31));
+        const thisYearEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())); // Today (days elapsed so far)
         return { start: thisYearStart, end: thisYearEnd };
       
       case 'last-year':
@@ -206,12 +229,19 @@ export const IncomeAnalysisWidget: React.FC = () => {
       const previousStart = new Date(start.getTime() - periodLength);
       const previousEnd = new Date(end.getTime() - periodLength);
       
+      console.log('📊 Income Trend Debug:');
+      console.log('📅 Current period:', start.toISOString().split('T')[0], 'to', end.toISOString().split('T')[0]);
+      console.log('📅 Previous period:', previousStart.toISOString().split('T')[0], 'to', previousEnd.toISOString().split('T')[0]);
+      console.log('💰 Current total:', currentTotal);
+      
       const previousIncome = transactions.filter(transaction => {
         const transactionDate = transaction.date;
         return transaction.type === 'income' && 
                transactionDate >= previousStart.toISOString().split('T')[0] && 
                transactionDate <= previousEnd.toISOString().split('T')[0];
       });
+
+      console.log('💰 Previous income transactions:', previousIncome.length);
 
       const previousConverted = await Promise.all(
         previousIncome.map(async (transaction) => {
@@ -226,11 +256,16 @@ export const IncomeAnalysisWidget: React.FC = () => {
 
       const previousTotal = previousConverted.reduce((sum, amount) => sum + amount, 0);
       
+      console.log('💰 Previous total:', previousTotal);
+      
       if (previousTotal === 0) {
+        console.log('📊 No previous income - returning stable 0%');
         return { trend: 'stable' as const, percentage: 0 };
       }
       
       const percentage = ((currentTotal - previousTotal) / previousTotal) * 100;
+      
+      console.log('📊 Calculated percentage:', percentage);
       
       if (Math.abs(percentage) < 5) {
         return { trend: 'stable' as const, percentage };
@@ -250,6 +285,13 @@ export const IncomeAnalysisWidget: React.FC = () => {
   useEffect(() => {
     calculateIncomeAnalysis();
   }, [selectedPeriod, customStartDate, customEndDate, transactions, baseCurrency]);
+
+  // Handle auto-expansion
+  useEffect(() => {
+    if (autoExpand) {
+      setIsExpanded(true);
+    }
+  }, [autoExpand]);
 
   // Handle custom date changes
   const handleCustomDateChange = (start: Date | null, end: Date | null) => {
@@ -401,7 +443,7 @@ export const IncomeAnalysisWidget: React.FC = () => {
             <Wallet className="w-6 h-6 text-income" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Income Analysis</h2>
+            <h2 className="text-2xl font-bold text-white">Income</h2>
           </div>
         </div>
         
@@ -525,9 +567,13 @@ export const IncomeAnalysisWidget: React.FC = () => {
                   <TrendingDown className="w-5 h-5 text-expense" />
                 )}
                 {incomeStats.trend === 'stable' && (
-                  <div className="w-5 h-5 bg-income rounded-full"></div>
+                  <TrendingUp className="w-5 h-5 text-warning" style={{ transform: 'rotate(0deg)' }} />
                 )}
-                <span className={`text-xl font-bold ${incomeStats.trend === 'up' ? 'text-income' : 'text-expense'}`}>
+                <span className={`text-xl font-bold ${
+                  incomeStats.trend === 'up' ? 'text-income' : 
+                  incomeStats.trend === 'down' ? 'text-expense' : 
+                  'text-warning'
+                }`}>
                   {incomeStats.trendPercentage.toFixed(1)}%
                 </span>
               </div>
@@ -573,7 +619,7 @@ export const IncomeAnalysisWidget: React.FC = () => {
                         {/* 3D Gradient Definitions */}
                         <defs>
                           {incomeSourceData.map((entry, index) => {
-                            const baseColor = INCOME_COLORS[index % INCOME_COLORS.length];
+                            const baseColor = getIncomeSourceColor(entry.source, index);
                             return (
                               <linearGradient key={`gradient-${index}`} id={`gradient-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
                                 <stop offset="0%" stopColor={baseColor} stopOpacity={1} />
@@ -597,7 +643,7 @@ export const IncomeAnalysisWidget: React.FC = () => {
                           strokeWidth={0}
                         >
                           {incomeSourceData.map((entry, index) => {
-                            const baseColor = INCOME_COLORS[index % INCOME_COLORS.length];
+                            const baseColor = getIncomeSourceColor(entry.source, index);
                             const isActive = activeIndex === index;
                             
                             return (
@@ -641,32 +687,13 @@ export const IncomeAnalysisWidget: React.FC = () => {
 
               {/* Right Column: All Income Sources */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-1 h-6 bg-income rounded-full"></div>
-                    <h3 className="text-xl font-semibold text-white">Income Overview</h3>
-                  </div>
-                  <button
-                    onClick={() => setIsSourcesExpanded(!isSourcesExpanded)}
-                    className="text-highlight hover:text-highlight/80 text-sm transition-colors flex items-center gap-1 bg-highlight/10 hover:bg-highlight/20 px-3 py-1 rounded-lg border border-highlight/20"
-                  >
-                    {isSourcesExpanded ? (
-                      <>
-                        <ChevronUp className="w-4 h-4" />
-                        Show Less
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="w-4 h-4" />
-                        Show All
-                      </>
-                    )}
-                  </button>
+                <div className="flex items-center gap-3">
+                  <div className="w-1 h-6 bg-income rounded-full"></div>
                 </div>
                 
                 <div className="space-y-3 max-h-[28rem] overflow-y-auto scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600">
                   {incomeSourceData.length > 0 ? (
-                    (isSourcesExpanded ? incomeSourceData : incomeSourceData.slice(0, 5)).map((source, index) => (
+                    incomeSourceData.map((source, index) => (
                       <div key={source.source}>
                         <div 
                           className="flex items-center justify-between bg-gradient-to-r from-surface to-background border border-border-light rounded-xl p-4 cursor-pointer hover:border-highlight/30 hover:bg-gradient-to-r hover:from-surface/80 hover:to-background/80 transition-all duration-300 group"
@@ -675,7 +702,7 @@ export const IncomeAnalysisWidget: React.FC = () => {
                           <div className="flex items-center gap-4">
                             <div 
                               className="w-4 h-4 rounded-full shadow-lg"
-                              style={{ backgroundColor: INCOME_COLORS[index % INCOME_COLORS.length] }}
+                              style={{ backgroundColor: getIncomeSourceColor(source.source, index) }}
                             ></div>
                             <div>
                               <div className="text-white font-semibold group-hover:text-highlight transition-colors">{formatIncomeSourceName(source.source)}</div>

@@ -5,6 +5,7 @@ import { supabaseService } from '../services/supabaseService';
 import { duplicatePreventionService } from '../services/duplicatePreventionService';
 import { databaseBackupService } from '../services/databaseBackupService';
 import { dataIntegrityService } from '../services/dataIntegrityService';
+import { calculateTotalsByType } from '../utils/currencyUtils';
 
 interface TransactionStore {
   transactions: Transaction[];
@@ -22,6 +23,7 @@ interface TransactionStore {
   getTransactionsByCategory: (category: string) => Transaction[];
   getTransactionsByDateRange: (startDate: string, endDate: string) => Transaction[];
   getFinancialSummary: () => FinancialSummary;
+  getFinancialSummaryAsync: () => Promise<FinancialSummary>;
   getCategoryTotals: () => CategoryTotal[];
   searchTransactions: (query: string) => Transaction[];
   // Backup and recovery methods
@@ -272,8 +274,9 @@ export const useTransactionStore = create<TransactionStore>()(
 
       getFinancialSummary: () => {
         const transactions = get().transactions;
+        const baseCurrency = get().baseCurrency;
         
-        // Calculate totals by type
+        // Calculate totals by type (raw amounts without conversion for backward compatibility)
         const totalIncome = transactions
           .filter((t) => t.type === 'income')
           .reduce((sum, t) => sum + t.amount, 0);
@@ -353,6 +356,67 @@ export const useTransactionStore = create<TransactionStore>()(
           incomeByCurrency,
           expensesByCurrency,
           investmentsByCurrency,
+        };
+      },
+
+      // New async version with proper currency conversion
+      getFinancialSummaryAsync: async () => {
+        const transactions = get().transactions;
+        const baseCurrency = get().baseCurrency;
+        
+        // Use centralized currency conversion utility
+        const totals = await calculateTotalsByType(transactions, baseCurrency);
+        
+        // For cumulative calculations, we need to group by month and calculate running totals
+        const monthlyData = new Map<string, { income: number; expenses: number; investments: number }>();
+        
+        // Convert each transaction and group by month
+        for (const transaction of transactions) {
+          const convertedAmount = await calculateTotalsByType([transaction], baseCurrency);
+          const date = new Date(transaction.date);
+          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          
+          if (!monthlyData.has(monthKey)) {
+            monthlyData.set(monthKey, { income: 0, expenses: 0, investments: 0 });
+          }
+          
+          const monthData = monthlyData.get(monthKey)!;
+          if (transaction.type === 'income') {
+            monthData.income += convertedAmount.income;
+          } else if (transaction.type === 'expense') {
+            monthData.expenses += convertedAmount.expenses;
+          } else if (transaction.type === 'investment') {
+            monthData.investments += convertedAmount.investments;
+          }
+        }
+
+        // Sort months chronologically
+        const sortedMonths = Array.from(monthlyData.entries()).sort(([a], [b]) => a.localeCompare(b));
+
+        // Calculate cumulative values
+        let cumulativeAvailable = 0;
+        let cumulativeInvestments = 0;
+
+        sortedMonths.forEach(([, data]) => {
+          const monthlyAvailableForMonth = data.income - data.expenses - data.investments;
+          cumulativeAvailable += monthlyAvailableForMonth;
+          cumulativeInvestments += data.investments;
+        });
+
+        // Net balance = cumulative available + cumulative investments
+        const netBalance = cumulativeAvailable + cumulativeInvestments;
+
+        return {
+          totalIncome: totals.income,
+          totalExpenses: totals.expenses,
+          totalInvestments: totals.investments,
+          monthlyAvailable: totals.netBalance,
+          cumulativeAvailable,
+          cumulativeInvestments,
+          netBalance,
+          incomeByCurrency: {}, // Will be populated by components that need it
+          expensesByCurrency: {},
+          investmentsByCurrency: {},
         };
       },
 

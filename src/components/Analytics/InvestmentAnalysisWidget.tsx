@@ -25,24 +25,52 @@ interface InvestmentStats {
   investmentPercentage: number;
 }
 
-const INVESTMENT_COLORS = [
-  '#ffd700', // Gold - Stocks
-  '#c0c0c0', // Silver - Bonds
-  '#ff6b35', // Orange - Crypto
-  '#9370db', // Purple - Real Estate
-  '#20b2aa', // Teal - Mutual Funds
-  '#ff69b4', // Pink - ETFs
-  '#00d4ff', // Cyan - Commodities
-  '#ffa500', // Orange - Other
+// Consistent color mapping for investment types
+const INVESTMENT_TYPE_COLORS: Record<string, string> = {
+  'stocks': '#ffd700',           // Gold
+  'bonds': '#c0c0c0',           // Silver
+  'cryptocurrency': '#ff6b35',   // Orange
+  'real-estate': '#9370db',      // Purple
+  'mutual-funds': '#20b2aa',     // Teal
+  'etfs': '#ff69b4',             // Pink
+  'commodities': '#00d4ff',      // Cyan
+  'precious-metals': '#9370db',  // Purple
+  'term-deposits': '#ffd700',    // Gold
+  'savings-account': '#c0c0c0',  // Silver
+  'binance-p2p': '#ff6b35',     // Orange
+  'other-investments': '#ffa500' // Orange
+};
+
+// Fallback colors for unmapped types
+const FALLBACK_COLORS = [
+  '#ffd700', '#c0c0c0', '#ff6b35', '#9370db', 
+  '#20b2aa', '#ff69b4', '#00d4ff', '#ffa500'
 ];
 
-export const InvestmentAnalysisWidget: React.FC = () => {
+// Helper function to get consistent color for investment type
+const getInvestmentColor = (investmentType: string, index: number = 0): string => {
+  return INVESTMENT_TYPE_COLORS[investmentType.toLowerCase()] || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+};
+
+interface InvestmentAnalysisWidgetProps {
+  autoExpand?: boolean;
+  initialPeriod?: string;
+  initialCustomStartDate?: Date | null;
+  initialCustomEndDate?: Date | null;
+}
+
+export const InvestmentAnalysisWidget: React.FC<InvestmentAnalysisWidgetProps> = ({ 
+  autoExpand = false,
+  initialPeriod = 'this-month',
+  initialCustomStartDate = null,
+  initialCustomEndDate = null
+}) => {
   const { transactions, baseCurrency } = useTransactionStore();
   
   // Period selection state
-  const [selectedPeriod, setSelectedPeriod] = useState('this-month');
-  const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
-  const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState(initialPeriod);
+  const [customStartDate, setCustomStartDate] = useState<Date | null>(initialCustomStartDate);
+  const [customEndDate, setCustomEndDate] = useState<Date | null>(initialCustomEndDate);
   
   // Analysis data state
   const [investmentData, setInvestmentData] = useState<InvestmentData[]>([]);
@@ -58,8 +86,7 @@ export const InvestmentAnalysisWidget: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Expandable sections state
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isInvestmentsExpanded, setIsInvestmentsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(autoExpand);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [expandedInvestments, setExpandedInvestments] = useState<Set<string>>(new Set());
 
@@ -71,7 +98,7 @@ export const InvestmentAnalysisWidget: React.FC = () => {
     switch (selectedPeriod) {
       case 'this-month':
         const thisMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-        const thisMonthEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0)); // Last day of current month
+        const thisMonthEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())); // Today (days elapsed so far)
         return { start: thisMonthStart, end: thisMonthEnd };
       
       case 'last-month':
@@ -81,7 +108,7 @@ export const InvestmentAnalysisWidget: React.FC = () => {
       
       case 'this-year':
         const thisYearStart = new Date(Date.UTC(now.getFullYear(), 0, 1));
-        const thisYearEnd = new Date(Date.UTC(now.getFullYear(), 11, 31));
+        const thisYearEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())); // Today (days elapsed so far)
         return { start: thisYearStart, end: thisYearEnd };
       
       case 'last-year':
@@ -284,6 +311,13 @@ export const InvestmentAnalysisWidget: React.FC = () => {
     calculateInvestmentAnalysis();
   }, [selectedPeriod, customStartDate, customEndDate, transactions, baseCurrency]);
 
+  // Handle auto-expansion
+  useEffect(() => {
+    if (autoExpand) {
+      setIsExpanded(true);
+    }
+  }, [autoExpand]);
+
   // Handle custom date changes
   const handleCustomDateChange = (start: Date | null, end: Date | null) => {
     setCustomStartDate(start);
@@ -367,7 +401,9 @@ export const InvestmentAnalysisWidget: React.FC = () => {
       'commodities': 'Commodities',
       'other': 'Other Investments',
       'precious-metals': 'Precious Metals',
-      'term-deposits': 'Term Deposits'
+      'term-deposits': 'Term Deposits',
+      'savings-account': 'Savings Account',
+      'binance-p2p': 'Binance P2P'
     };
 
     // Return mapped name or format the investment name
@@ -434,7 +470,7 @@ export const InvestmentAnalysisWidget: React.FC = () => {
             <PiggyBank className="w-6 h-6 text-warning" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Investment Analysis</h2>
+            <h2 className="text-2xl font-bold text-white">Investments</h2>
           </div>
         </div>
         
@@ -524,7 +560,7 @@ export const InvestmentAnalysisWidget: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {/* Summary Stats - Always visible */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-gradient-to-br from-surface to-background border border-warning/30 rounded-xl p-5 hover:border-warning/50 transition-all duration-300">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-2 h-2 bg-warning rounded-full"></div>
@@ -535,13 +571,13 @@ export const InvestmentAnalysisWidget: React.FC = () => {
               </div>
             </div>
             
-            <div className="bg-gradient-to-br from-surface to-background border border-highlight/30 rounded-xl p-5 hover:border-highlight/50 transition-all duration-300">
+            <div className="bg-gradient-to-br from-surface to-background border border-income/30 rounded-xl p-5 hover:border-income/50 transition-all duration-300">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 bg-highlight rounded-full"></div>
-                <div className="text-gray-400 text-sm font-medium">Daily Average</div>
+                <div className="w-2 h-2 bg-income rounded-full"></div>
+                <div className="text-gray-400 text-sm font-medium">% of Income</div>
               </div>
               <div className="text-white text-xl font-bold">
-                {formatCurrency(investmentStats.averageDaily, baseCurrency)}
+                {investmentStats.investmentPercentage.toFixed(1)}%
               </div>
             </div>
             
@@ -558,9 +594,13 @@ export const InvestmentAnalysisWidget: React.FC = () => {
                   <TrendingDown className="w-5 h-5 text-expense" />
                 )}
                 {investmentStats.trend === 'stable' && (
-                  <div className="w-5 h-5 bg-income rounded-full"></div>
+                  <TrendingUp className="w-5 h-5 text-warning" style={{ transform: 'rotate(0deg)' }} />
                 )}
-                <span className={`text-xl font-bold ${investmentStats.trend === 'up' ? 'text-income' : 'text-expense'}`}>
+                <span className={`text-xl font-bold ${
+                  investmentStats.trend === 'up' ? 'text-income' : 
+                  investmentStats.trend === 'down' ? 'text-expense' : 
+                  'text-warning'
+                }`}>
                   {investmentStats.trendPercentage.toFixed(1)}%
                 </span>
               </div>
@@ -572,16 +612,6 @@ export const InvestmentAnalysisWidget: React.FC = () => {
                 <div className="text-gray-400 text-sm font-medium">Period</div>
               </div>
               <div className="text-white text-xl font-bold">{investmentStats.periodDays} days</div>
-            </div>
-
-            <div className="bg-gradient-to-br from-surface to-background border border-income/30 rounded-xl p-5 hover:border-income/50 transition-all duration-300">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 bg-income rounded-full"></div>
-                <div className="text-gray-400 text-sm font-medium">% of Income</div>
-              </div>
-              <div className="text-white text-xl font-bold">
-                {investmentStats.investmentPercentage.toFixed(1)}%
-              </div>
             </div>
           </div>
 
@@ -616,7 +646,7 @@ export const InvestmentAnalysisWidget: React.FC = () => {
                         {/* 3D Gradient Definitions */}
                         <defs>
                           {investmentData.map((entry, index) => {
-                            const baseColor = INVESTMENT_COLORS[index % INVESTMENT_COLORS.length];
+                            const baseColor = getInvestmentColor(entry.investment, index);
                             return (
                               <linearGradient key={`gradient-${index}`} id={`gradient-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
                                 <stop offset="0%" stopColor={baseColor} stopOpacity={1} />
@@ -640,7 +670,7 @@ export const InvestmentAnalysisWidget: React.FC = () => {
                           strokeWidth={0}
                         >
                           {investmentData.map((entry, index) => {
-                            const baseColor = INVESTMENT_COLORS[index % INVESTMENT_COLORS.length];
+                            const baseColor = getInvestmentColor(entry.investment, index);
                             const isActive = activeIndex === index;
                             
                             return (
@@ -684,32 +714,13 @@ export const InvestmentAnalysisWidget: React.FC = () => {
 
               {/* Right Column: All Investment Types */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-1 h-6 bg-warning rounded-full"></div>
-                    <h3 className="text-xl font-semibold text-white">Investment Types</h3>
-                  </div>
-                  <button
-                    onClick={() => setIsInvestmentsExpanded(!isInvestmentsExpanded)}
-                    className="text-highlight hover:text-highlight/80 text-sm transition-colors flex items-center gap-1 bg-highlight/10 hover:bg-highlight/20 px-3 py-1 rounded-lg border border-highlight/20"
-                  >
-                    {isInvestmentsExpanded ? (
-                      <>
-                        <ChevronUp className="w-4 h-4" />
-                        Show Less
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="w-4 h-4" />
-                        Show All
-                      </>
-                    )}
-                  </button>
+                <div className="flex items-center gap-3">
+                  <div className="w-1 h-6 bg-warning rounded-full"></div>
                 </div>
                 
                 <div className="space-y-3 max-h-[28rem] overflow-y-auto scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600">
                   {investmentData.length > 0 ? (
-                    (isInvestmentsExpanded ? investmentData : investmentData.slice(0, 5)).map((investment, index) => (
+                    investmentData.map((investment, index) => (
                       <div key={investment.investment}>
                         <div 
                           className="flex items-center justify-between bg-gradient-to-r from-surface to-background border border-border-light rounded-xl p-4 cursor-pointer hover:border-highlight/30 hover:bg-gradient-to-r hover:from-surface/80 hover:to-background/80 transition-all duration-300 group"
@@ -718,7 +729,7 @@ export const InvestmentAnalysisWidget: React.FC = () => {
                           <div className="flex items-center gap-4">
                             <div 
                               className="w-4 h-4 rounded-full shadow-lg"
-                              style={{ backgroundColor: INVESTMENT_COLORS[index % INVESTMENT_COLORS.length] }}
+                              style={{ backgroundColor: getInvestmentColor(investment.investment, index) }}
                             ></div>
                             <div>
                               <div className="text-white font-semibold group-hover:text-highlight transition-colors">{formatInvestmentName(investment.investment)}</div>

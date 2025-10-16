@@ -23,18 +23,54 @@ interface SpendingStats {
   periodDays: number;
 }
 
-const COLORS = [
+// Consistent color mapping for spending categories
+const CATEGORY_COLORS: Record<string, string> = {
+  'rent-mortgage': '#8884d8',        // Purple
+  'utilities': '#82ca9d',            // Green
+  'groceries': '#ffc658',            // Yellow
+  'transportation': '#ff7c7c',       // Red
+  'healthcare': '#8dd1e1',           // Light Blue
+  'entertainment': '#d084d0',        // Pink
+  'dining-out': '#87d068',           // Light Green
+  'shopping': '#ffb347',             // Orange
+  'education': '#ff6b6b',            // Red
+  'insurance': '#4ecdc4',            // Teal
+  'mobile-phone': '#8884d8',        // Purple
+  'cigarettes': '#ff7c7c',           // Red
+  'alcohol': '#ffc658',              // Yellow
+  'software-subscriptions': '#8dd1e1' // Light Blue
+};
+
+// Fallback colors for unmapped categories
+const FALLBACK_COLORS = [
   '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1',
   '#d084d0', '#87d068', '#ffb347', '#ff6b6b', '#4ecdc4'
 ];
 
-export const SpendingAnalysisWidget: React.FC = () => {
+// Helper function to get consistent color for category
+const getCategoryColor = (category: string, index: number = 0): string => {
+  return CATEGORY_COLORS[category.toLowerCase()] || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+};
+
+interface SpendingAnalysisWidgetProps {
+  autoExpand?: boolean;
+  initialPeriod?: string;
+  initialCustomStartDate?: Date | null;
+  initialCustomEndDate?: Date | null;
+}
+
+export const SpendingAnalysisWidget: React.FC<SpendingAnalysisWidgetProps> = ({ 
+  autoExpand = false,
+  initialPeriod = 'this-month',
+  initialCustomStartDate = null,
+  initialCustomEndDate = null
+}) => {
   const { transactions, baseCurrency } = useTransactionStore();
   
   // Period selection state
-  const [selectedPeriod, setSelectedPeriod] = useState('this-month');
-  const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
-  const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState(initialPeriod);
+  const [customStartDate, setCustomStartDate] = useState<Date | null>(initialCustomStartDate);
+  const [customEndDate, setCustomEndDate] = useState<Date | null>(initialCustomEndDate);
   
   // Analysis data state
   const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
@@ -48,8 +84,7 @@ export const SpendingAnalysisWidget: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Expandable sections state
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(autoExpand);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
@@ -61,7 +96,7 @@ export const SpendingAnalysisWidget: React.FC = () => {
     switch (selectedPeriod) {
       case 'this-month':
         const thisMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-        const thisMonthEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0)); // Last day of current month
+        const thisMonthEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())); // Today (days elapsed so far)
         return { start: thisMonthStart, end: thisMonthEnd };
       
       case 'last-month':
@@ -71,7 +106,7 @@ export const SpendingAnalysisWidget: React.FC = () => {
       
       case 'this-year':
         const thisYearStart = new Date(Date.UTC(now.getFullYear(), 0, 1));
-        const thisYearEnd = new Date(Date.UTC(now.getFullYear(), 11, 31));
+        const thisYearEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())); // Today (days elapsed so far)
         return { start: thisYearStart, end: thisYearEnd };
       
       case 'last-year':
@@ -222,6 +257,13 @@ export const SpendingAnalysisWidget: React.FC = () => {
   useEffect(() => {
     calculateSpendingAnalysis();
   }, [selectedPeriod, customStartDate, customEndDate, transactions, baseCurrency]);
+
+  // Handle auto-expansion
+  useEffect(() => {
+    if (autoExpand) {
+      setIsExpanded(true);
+    }
+  }, [autoExpand]);
 
   // Handle custom date changes
   const handleCustomDateChange = (start: Date | null, end: Date | null) => {
@@ -402,7 +444,7 @@ export const SpendingAnalysisWidget: React.FC = () => {
             <ShoppingCart className="w-6 h-6 text-expense" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Spending Analysis</h2>
+            <h2 className="text-2xl font-bold text-white">Spendings</h2>
           </div>
         </div>
         
@@ -520,15 +562,19 @@ export const SpendingAnalysisWidget: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 {spendingStats.trend === 'up' && (
-                  <TrendingUp className="w-5 h-5 text-expense" />
+                  <TrendingUp className="w-5 h-5 text-income" />
                 )}
                 {spendingStats.trend === 'down' && (
-                  <TrendingDown className="w-5 h-5 text-income" />
+                  <TrendingDown className="w-5 h-5 text-expense" />
                 )}
                 {spendingStats.trend === 'stable' && (
-                  <div className="w-5 h-5 bg-income rounded-full"></div>
+                  <TrendingUp className="w-5 h-5 text-warning" style={{ transform: 'rotate(0deg)' }} />
                 )}
-                <span className={`text-xl font-bold ${spendingStats.trend === 'up' ? 'text-expense' : 'text-income'}`}>
+                <span className={`text-xl font-bold ${
+                  spendingStats.trend === 'up' ? 'text-income' : 
+                  spendingStats.trend === 'down' ? 'text-expense' : 
+                  'text-warning'
+                }`}>
                   {spendingStats.trendPercentage.toFixed(1)}%
                 </span>
               </div>
@@ -573,7 +619,7 @@ export const SpendingAnalysisWidget: React.FC = () => {
                       {/* 3D Gradient Definitions */}
                       <defs>
                         {categoryData.map((entry, index) => {
-                          const baseColor = COLORS[index % COLORS.length];
+                          const baseColor = getCategoryColor(entry.category, index);
                           return (
                             <linearGradient key={`gradient-${index}`} id={`gradient-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
                               <stop offset="0%" stopColor={baseColor} stopOpacity={1} />
@@ -586,7 +632,7 @@ export const SpendingAnalysisWidget: React.FC = () => {
                         
                         {/* Radial gradients for inner glow */}
                         {categoryData.map((entry, index) => {
-                          const baseColor = COLORS[index % COLORS.length];
+                          const baseColor = getCategoryColor(entry.category, index);
                           return (
                             <radialGradient key={`radial-${index}`} id={`radial-${index}`} cx="50%" cy="50%" r="50%">
                               <stop offset="0%" stopColor={baseColor} stopOpacity={1} />
@@ -609,7 +655,7 @@ export const SpendingAnalysisWidget: React.FC = () => {
                         strokeWidth={0}
                       >
                         {categoryData.map((entry, index) => {
-                          const baseColor = COLORS[index % COLORS.length];
+                          const baseColor = getCategoryColor(entry.category, index);
                           const isActive = activeIndex === index;
                           
                           return (
@@ -646,31 +692,12 @@ export const SpendingAnalysisWidget: React.FC = () => {
 
               {/* Right Column: All Categories */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-1 h-6 bg-highlight rounded-full"></div>
-                    <h3 className="text-xl font-semibold text-white">Expenses Overview</h3>
-                  </div>
-                  <button
-                    onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
-                    className="text-highlight hover:text-highlight/80 text-sm transition-colors flex items-center gap-1 bg-highlight/10 hover:bg-highlight/20 px-3 py-1 rounded-lg border border-highlight/20"
-                  >
-                    {isCategoriesExpanded ? (
-                      <>
-                        <ChevronUp className="w-4 h-4" />
-                        Show Less
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="w-4 h-4" />
-                        Show All
-                      </>
-                    )}
-                  </button>
+                <div className="flex items-center gap-3">
+                  <div className="w-1 h-6 bg-highlight rounded-full"></div>
                 </div>
                 
                 <div className="space-y-3 max-h-[28rem] overflow-y-auto scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600">
-                  {(isCategoriesExpanded ? categoryData : categoryData.slice(0, 5)).map((category, index) => (
+                  {categoryData.map((category, index) => (
                     <div key={category.category}>
                       <div 
                         className="flex items-center justify-between bg-gradient-to-r from-surface to-background border border-border-light rounded-xl p-4 cursor-pointer hover:border-highlight/30 hover:bg-gradient-to-r hover:from-surface/80 hover:to-background/80 transition-all duration-300 group"
@@ -679,7 +706,7 @@ export const SpendingAnalysisWidget: React.FC = () => {
                         <div className="flex items-center gap-4">
                           <div 
                             className="w-4 h-4 rounded-full shadow-lg"
-                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            style={{ backgroundColor: getCategoryColor(category.category, index) }}
                           ></div>
                           <div>
                             <div className="text-white font-semibold group-hover:text-highlight transition-colors">{formatCategoryName(category.category)}</div>

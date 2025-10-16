@@ -30,6 +30,9 @@ export function AppRouter() {
         <Route path="/analytics" element={<Layout>
               <AnalyticsPage />
             </Layout>} />
+        <Route path="/analytics/:widget" element={<Layout>
+              <AnalyticsPage />
+            </Layout>} />
         <Route path="/settings" element={<Layout>
               <SettingsPage />
             </Layout>} />

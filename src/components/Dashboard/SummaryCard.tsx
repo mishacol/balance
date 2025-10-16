@@ -11,6 +11,7 @@ interface SummaryCardProps {
   date?: string;
   explanation?: string;
   isLoading?: boolean;
+  onClick?: () => void;
 }
 export const SummaryCard: React.FC<SummaryCardProps> = ({
   title,
@@ -20,7 +21,8 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   percentage,
   date,
   explanation,
-  isLoading = false
+  isLoading = false,
+  onClick
 }) => {
   const getColor = () => {
     switch (type) {
@@ -38,7 +40,10 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
         return 'text-highlight';
     }
   };
-  return <Card className="h-full">
+  return <Card 
+      className={`h-full ${onClick ? 'cursor-pointer hover:border-highlight/50 hover:shadow-lg transition-all duration-200' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex flex-col h-full">
         <h3 className="text-gray-400 text-xs font-medium">{title}</h3>
         {explanation && <p className="text-gray-600 text-xs mt-0.5 leading-tight whitespace-nowrap">{explanation}</p>}

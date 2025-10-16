@@ -5,6 +5,7 @@ import { TransactionList } from './TransactionList';
 import { Button } from '../ui/Button';
 import { useTransactionStore } from '../../store/transactionStore';
 import { supabaseService } from '../../services/supabaseService';
+import { calculateTotalAmount as convertTotalAmount } from '../../utils/currencyUtils';
 import { SearchIcon, DownloadIcon } from 'lucide-react';
 import Select from 'react-select';
 import DatePicker from 'react-datepicker';
@@ -12,7 +13,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 export const TransactionsPage: React.FC = () => {
   console.log(`🔍 [TRANSACTIONS PAGE] Component mounted/rendered`);
   const navigate = useNavigate();
-  const { transactions } = useTransactionStore();
+  const { transactions, baseCurrency } = useTransactionStore();
   
   // Persistent filter state - loads from localStorage on mount
   const [searchQuery, setSearchQuery] = useState(() => {
@@ -71,20 +72,20 @@ export const TransactionsPage: React.FC = () => {
           sortOrder: 'desc'
         });
         
-        // Calculate total amount
-        const total = result.transactions.reduce((sum, t) => sum + t.amount, 0);
+        // Calculate total amount using centralized utility
+        const total = await convertTotalAmount(result.transactions, baseCurrency);
         setTotalAmount(total);
       } else {
-        // For local storage, calculate from filtered transactions
+        // For local storage, calculate from filtered transactions using centralized utility
         const filtered = getFilteredTransactions();
-        const total = filtered.reduce((sum, t) => sum + t.amount, 0);
+        const total = await convertTotalAmount(filtered, baseCurrency);
         setTotalAmount(total);
       }
     } catch (error) {
       console.error('Error calculating total amount:', error);
       setTotalAmount(0);
     }
-  }, [debouncedSearchQuery, typeFilter, categoryFilter, selectedTimeRange, customStartDate, customEndDate]);
+  }, [debouncedSearchQuery, typeFilter, categoryFilter, selectedTimeRange, customStartDate, customEndDate, baseCurrency]);
 
   // Calculate total amount when filters change
   useEffect(() => {

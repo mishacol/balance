@@ -472,6 +472,31 @@ export const DashboardPage: React.FC = () => {
 
   const primaryCurrency = getPrimaryCurrency();
 
+  // Navigation handlers for dashboard widgets
+  const handleIncomeClick = () => {
+    const urlParams = new URLSearchParams();
+    urlParams.set('period', selectedTimeRange);
+    if (customStartDate) urlParams.set('start', customStartDate.toISOString().split('T')[0]);
+    if (customEndDate) urlParams.set('end', customEndDate.toISOString().split('T')[0]);
+    window.open(`/analytics/income?${urlParams.toString()}`, '_blank');
+  };
+
+  const handleExpensesClick = () => {
+    const urlParams = new URLSearchParams();
+    urlParams.set('period', selectedTimeRange);
+    if (customStartDate) urlParams.set('start', customStartDate.toISOString().split('T')[0]);
+    if (customEndDate) urlParams.set('end', customEndDate.toISOString().split('T')[0]);
+    window.open(`/analytics/expenses?${urlParams.toString()}`, '_blank');
+  };
+
+  const handleInvestmentsClick = () => {
+    const urlParams = new URLSearchParams();
+    urlParams.set('period', selectedTimeRange);
+    if (customStartDate) urlParams.set('start', customStartDate.toISOString().split('T')[0]);
+    if (customEndDate) urlParams.set('end', customEndDate.toISOString().split('T')[0]);
+    window.open(`/analytics/investments?${urlParams.toString()}`, '_blank');
+  };
+
   // Generate chart data with dynamic aggregation based on date range
   const generateChartData = async () => {
     if (filteredTransactions.length === 0) return [];
@@ -693,7 +718,8 @@ export const DashboardPage: React.FC = () => {
           currency={baseCurrency} 
           date={getPeriodName()} 
           explanation="Earned this period"
-          isLoading={isConvertingCurrency} 
+          isLoading={isConvertingCurrency}
+          onClick={handleIncomeClick}
         />
         
         <SummaryCard 
@@ -703,7 +729,8 @@ export const DashboardPage: React.FC = () => {
           currency={baseCurrency} 
           date={getPeriodName()} 
           explanation="Spent this period"
-          isLoading={isConvertingCurrency} 
+          isLoading={isConvertingCurrency}
+          onClick={handleExpensesClick}
         />
         
         <SummaryCard 
@@ -713,7 +740,8 @@ export const DashboardPage: React.FC = () => {
           currency={baseCurrency} 
           date={getPeriodName()} 
           explanation="Total investments"
-          isLoading={isConvertingCurrency} 
+          isLoading={isConvertingCurrency}
+          onClick={handleInvestmentsClick}
         />
         
         <SummaryCard 
