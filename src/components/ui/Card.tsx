@@ -4,14 +4,17 @@ interface CardProps {
   className?: string;
   title?: string;
   onClick?: () => void;
+  id?: string;
 }
 export const Card: React.FC<CardProps> = ({
   children,
   className = '',
   title,
-  onClick
+  onClick,
+  id
 }) => {
   return <div 
+      id={id}
       className={`bg-surface border border-border rounded-lg p-4 ${className}`}
       onClick={onClick}
     >

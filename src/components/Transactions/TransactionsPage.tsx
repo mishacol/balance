@@ -584,7 +584,7 @@ export const TransactionsPage: React.FC = () => {
           'childcare': ['babysitting', 'child-support', 'daycare', 'kids-activities', 'school-supplies', 'toys-games'],
           'clothing-footwear': ['clothing', 'shoes'],
           'education': ['books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition'],
-          'entertainment': ['books-magazines', 'concerts', 'games-apps', 'hobbies', 'movies', 'music-streaming', 'night-clubs', 'sports-fitness', 'recreation', 'theaters', 'vacation-travel'],
+          'entertainment': ['books-magazines', 'concerts', 'games-apps', 'go-outs', 'hobbies', 'movies', 'music-streaming', 'night-clubs', 'sports-fitness', 'recreation', 'theaters', 'vacation-travel'],
           'financial-obligations': ['bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes'],
           'food-dining': ['alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants'],
           'healthcare': ['dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'pharmacy', 'prescriptions', 'therapy-counseling', 'vision'],
@@ -595,6 +595,7 @@ export const TransactionsPage: React.FC = () => {
           'pets': ['grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary'],
           'telecommunications': ['cable-satellite-tv', 'internet', 'landline-phone', 'mobile-phone', 'voip'],
           'transportation': ['car-insurance', 'car-payment', 'gas-fuel', 'interurban-travel', 'international-travel', 'maintenance-repairs', 'parking', 'public-transit', 'rideshare-taxi', 'tolls', 'vehicle-registration'],
+          'accommodation': ['hotels', 'motels', 'hostels'],
           'utilities': ['apartment-intercom', 'building-cleaning', 'building-maintenance', 'electricity', 'gas', 'heating', 'trash-recycling', 'water-sewer'],
         };
         
@@ -654,6 +655,7 @@ export const TransactionsPage: React.FC = () => {
       { value: 'pets', label: 'Pets' },
       { value: 'telecommunications', label: 'Telecommunications' },
       { value: 'transportation', label: 'Transportation' },
+      { value: 'accommodation', label: 'Accommodation' },
       { value: 'utilities', label: 'Utilities' },
       { value: 'miscellaneous', label: 'Miscellaneous' }
     ];
@@ -686,6 +688,7 @@ export const TransactionsPage: React.FC = () => {
       { value: 'social-security', label: 'Social Security' },
       { value: 'tax-refund', label: 'Tax Refund' },
       { value: 'unemployment-benefits', label: 'Unemployment Benefits' },
+      { value: 'gig-work', label: 'Gig Work' },
       { value: 'gifts', label: 'Gifts' },
       { value: 'charity', label: 'Charity' },
       { value: 'inheritance', label: 'Inheritance' },
@@ -717,6 +720,7 @@ export const TransactionsPage: React.FC = () => {
       { value: 'tuition', label: 'Tuition' },
       { value: 'books-magazines', label: 'Books & Magazines' },
       { value: 'games-apps', label: 'Games & Apps' },
+      { value: 'go-outs', label: 'Go Outs' },
       { value: 'hobbies', label: 'Hobbies' },
       { value: 'music-streaming', label: 'Music/Streaming' },
       { value: 'sports-fitness', label: 'Sports/Fitness' },
@@ -769,6 +773,7 @@ export const TransactionsPage: React.FC = () => {
       { value: 'cosmetics-skincare', label: 'Cosmetics/Skincare' },
       { value: 'haircuts-salon', label: 'Haircuts/Salon' },
       { value: 'laundry-dry-cleaning', label: 'Laundry/Dry Cleaning' },
+      { value: 'perfumes', label: 'Perfumes' },
       { value: 'shoes', label: 'Shoes' },
       { value: 'spa-massage', label: 'Spa/Massage' },
       { value: 'clothing', label: 'Clothing' },
@@ -788,6 +793,9 @@ export const TransactionsPage: React.FC = () => {
       { value: 'rideshare-taxi', label: 'Rideshare/Taxi' },
       { value: 'tolls', label: 'Tolls' },
       { value: 'vehicle-registration', label: 'Vehicle Registration' },
+      { value: 'hotels', label: 'Hotels' },
+      { value: 'motels', label: 'Motels' },
+      { value: 'hostels', label: 'Hostels' },
       { value: 'electricity', label: 'Electricity' },
       { value: 'gas', label: 'Gas' },
       { value: 'heating', label: 'Heating' },
@@ -856,16 +864,17 @@ export const TransactionsPage: React.FC = () => {
         const expenseSubs = ['business-travel', 'equipment', 'marketing-advertising', 'office-supplies', 'professional-fees', 'software-subscriptions',
           'charitable-subscriptions', 'donations', 'gifts', 'charity', 'babysitting', 'child-support', 'daycare', 'kids-activities', 'school-supplies', 'toys-games',
           'books-supplies', 'online-courses', 'student-loans', 'tutoring', 'tuition',
-          'books-magazines', 'games-apps', 'hobbies', 'music-streaming', 'sports-fitness', 'recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs', 'event-tickets',
+          'books-magazines', 'games-apps', 'go-outs', 'hobbies', 'music-streaming', 'sports-fitness', 'recreation', 'vacation-travel', 'movies', 'concerts', 'theaters', 'night-clubs', 'event-tickets',
           'bank-fees', 'credit-card-payments', 'investment-contributions', 'life-insurance', 'personal-loans', 'savings', 'taxes',
           'alcohol', 'beverages', 'coffee-shops', 'delivery-takeout', 'fast-food', 'groceries', 'restaurants', 'snacks-candies',
           'dental', 'doctor-visits', 'fitness-gym', 'health-insurance', 'hospital-emergency', 'prescriptions', 'therapy-counseling', 'vision', 'pharmacy',
           'furniture-appliances', 'home-insurance', 'maintenance-repairs', 'property-tax', 'rent', 'mortgage', 'cleaning-products', 'electronics', 'kitchen-utensils', 'household-goods',
           'cash-withdrawals', 'cigarettes', 'fines-penalties', 'legal-fees', 'lottery-gambling', 'other', 'subscriptions', 'tobacco-vaping',
-          'cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'spa-massage', 'personal-hygiene', 'shaving-razor',
+          'cosmetics-skincare', 'haircuts-salon', 'laundry-dry-cleaning', 'perfumes', 'spa-massage', 'personal-hygiene', 'shaving-razor',
           'clothing', 'shoes',
           'grooming', 'pet-food', 'pet-insurance', 'pet-supplies', 'veterinary',
           'car-insurance', 'car-payment', 'gas-fuel', 'interurban-travel', 'international-travel', 'maintenance-repairs', 'parking', 'public-transit', 'rideshare-taxi', 'tolls', 'vehicle-registration',
+          'hotels', 'motels', 'hostels',
           'electricity', 'gas', 'heating', 'trash-recycling', 'water-sewer', 'building-maintenance', 'apartment-intercom', 'building-cleaning',
           'mobile-phone', 'landline-phone', 'voip', 'cable-satellite-tv', 'internet', 'electronics', 'souvenirs'];
         return expenseSubs.includes(sub.value);
@@ -1019,13 +1028,14 @@ export const TransactionsPage: React.FC = () => {
                   const newCategory = selectedOption?.value || '';
                   setCategoryFilter(newCategory);
                   
-                  // Auto-set type filter based on category
-                  if (newCategory) {
+                  // Auto-set type filter based on category ONLY if no type is already selected
+                  // This prevents overriding user's explicit type selection for ambiguous categories (like "gifts")
+                  if (newCategory && !typeFilter) {
                     const inferredType = getTypeFromCategory(newCategory);
-                    if (inferredType && inferredType !== typeFilter) {
+                    if (inferredType) {
                       setTypeFilter(inferredType);
                     }
-                  } else {
+                  } else if (!newCategory) {
                     // If category is cleared, also clear type filter
                     setTypeFilter('');
                   }

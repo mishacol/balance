@@ -235,6 +235,7 @@ export const TransactionForm: React.FC = () => {
         {
           label: 'Other Income',
           options: [
+            { value: 'gig-work', label: 'Gig Work' },
             { value: 'gifts', label: 'Gifts' },
             { value: 'inheritance', label: 'Inheritance' },
             { value: 'lottery-gambling', label: 'Lottery & Gambling' },
@@ -342,6 +343,7 @@ export const TransactionForm: React.FC = () => {
           options: [
             { value: 'books-magazines', label: 'Books & Magazines' },
             { value: 'games-apps', label: 'Games & Apps' },
+            { value: 'go-outs', label: 'Go Outs' },
             { value: 'hobbies', label: 'Hobbies' },
             { value: 'music-streaming', label: 'Music/Streaming' },
             { value: 'sports-fitness', label: 'Sports/Fitness' },
@@ -434,6 +436,7 @@ export const TransactionForm: React.FC = () => {
             { value: 'cosmetics-skincare', label: 'Cosmetics/Skincare' },
             { value: 'haircuts-salon', label: 'Haircuts/Salon' },
             { value: 'laundry-dry-cleaning', label: 'Laundry/Dry Cleaning' },
+            { value: 'perfumes', label: 'Perfumes' },
             { value: 'personal-hygiene', label: 'Personal Hygiene' },
             { value: 'shaving-razor', label: 'Shaving Razor' },
             { value: 'spa-massage', label: 'Spa/Massage' }
@@ -470,6 +473,14 @@ export const TransactionForm: React.FC = () => {
             { value: 'rideshare-taxi', label: 'Rideshare/Taxi' },
             { value: 'tolls', label: 'Tolls' },
             { value: 'vehicle-registration', label: 'Vehicle Registration' }
+          ]
+        },
+        {
+          label: 'Accommodation',
+          options: [
+            { value: 'hotels', label: 'Hotels' },
+            { value: 'motels', label: 'Motels' },
+            { value: 'hostels', label: 'Hostels' }
           ]
         },
         {

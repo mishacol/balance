@@ -12,6 +12,7 @@ interface SummaryCardProps {
   explanation?: string;
   isLoading?: boolean;
   onClick?: () => void;
+  averagePerPeriod?: { value: number; period: 'month' | 'week' };
 }
 export const SummaryCard: React.FC<SummaryCardProps> = ({
   title,
@@ -22,7 +23,8 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   date,
   explanation,
   isLoading = false,
-  onClick
+  onClick,
+  averagePerPeriod
 }) => {
   const getColor = () => {
     switch (type) {
@@ -66,6 +68,11 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
               </span>
               <span className="text-gray-400 ml-1">vs last period</span>
             </div>}
+          {averagePerPeriod && !isLoading && (
+            <div className="mt-2 text-xs text-gray-500">
+              Avg. per {averagePerPeriod.period}: {formatCurrency(averagePerPeriod.value, currency)}
+            </div>
+          )}
         </div>
       </div>
     </Card>;

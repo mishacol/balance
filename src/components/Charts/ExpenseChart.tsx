@@ -4,7 +4,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { useTransactionStore } from '../../store/transactionStore';
 
 interface ChartData {
-  month: string;
+  [key: string]: string | number;
   income: number;
   expenses: number;
   investments: number;
@@ -12,10 +12,12 @@ interface ChartData {
 
 interface ExpenseChartProps {
   data: ChartData[];
+  dataKey?: string;
 }
 
 export const ExpenseChart: React.FC<ExpenseChartProps> = ({
-  data
+  data,
+  dataKey = 'month'
 }) => {
   const { baseCurrency } = useTransactionStore();
   
@@ -54,7 +56,7 @@ export const ExpenseChart: React.FC<ExpenseChartProps> = ({
       cursor: 'pointer'
     }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" />
-        <XAxis dataKey="month" axisLine={{
+        <XAxis dataKey={dataKey} axisLine={{
         stroke: '#1f1f1f'
       }} tick={{
         fill: '#888888',

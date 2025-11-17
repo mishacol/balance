@@ -6,7 +6,8 @@ import { currencyService } from '../../services/currencyService';
 import { formatCurrency } from '../../utils/formatters';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { TrendingUp, TrendingDown, PiggyBank, Calendar, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, PiggyBank, Calendar, ChevronDown, ChevronUp, ChevronRight, Printer } from 'lucide-react';
+import { exportInvestmentToPDF } from '../../utils/pdfExport';
 
 interface InvestmentData {
   investment: string;
@@ -97,24 +98,30 @@ export const InvestmentAnalysisWidget: React.FC<InvestmentAnalysisWidgetProps> =
     
     switch (selectedPeriod) {
       case 'this-month':
-        const thisMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-        const thisMonthEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())); // Today (days elapsed so far)
+        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const thisMonthEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Today (days elapsed so far)
         return { start: thisMonthStart, end: thisMonthEnd };
       
       case 'last-month':
-        const lastMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 1, 1));
-        const lastMonthEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 0));
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
         return { start: lastMonthStart, end: lastMonthEnd };
       
       case 'this-year':
-        const thisYearStart = new Date(Date.UTC(now.getFullYear(), 0, 1));
-        const thisYearEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())); // Today (days elapsed so far)
+        const thisYearStart = new Date(now.getFullYear(), 0, 1);
+        const thisYearEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Today (days elapsed so far)
         return { start: thisYearStart, end: thisYearEnd };
       
       case 'last-year':
-        const lastYearStart = new Date(Date.UTC(now.getFullYear() - 1, 0, 1));
-        const lastYearEnd = new Date(Date.UTC(now.getFullYear() - 1, 11, 31));
+        const lastYearStart = new Date(now.getFullYear() - 1, 0, 1);
+        const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31);
         return { start: lastYearStart, end: lastYearEnd };
+      
+      case 'all-time':
+        // Include all records starting from April 1, 2013 (when tracking started)
+        const allTimeStart = new Date(2013, 3, 1); // April 1, 2013
+        const allTimeEnd = new Date(now.getFullYear() + 1, 11, 31); // December 31, next year
+        return { start: allTimeStart, end: allTimeEnd };
       
       case 'custom':
         if (customStartDate && customEndDate) {
@@ -133,8 +140,8 @@ export const InvestmentAnalysisWidget: React.FC<InvestmentAnalysisWidgetProps> =
     
     try {
       const { start, end } = getDateRange();
-      const startStr = start.toISOString().split('T')[0];
-      const endStr = end.toISOString().split('T')[0];
+      const startStr = start.toLocaleDateString('en-CA');
+      const endStr = end.toLocaleDateString('en-CA');
       
       // Filter investment transactions for the selected period
       const periodInvestments = transactions.filter(transaction => {
@@ -182,7 +189,13 @@ export const InvestmentAnalysisWidget: React.FC<InvestmentAnalysisWidgetProps> =
           averageDaily: 0,
           trend: 'stable',
           trendPercentage: 0,
-          periodDays: Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1),
+          periodDays: (() => {
+            const startMidnight = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+            const endMidnight = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+            const diffMs = endMidnight.getTime() - startMidnight.getTime();
+            const diffDays = diffMs / (1000 * 60 * 60 * 24);
+            return Math.max(1, Math.floor(diffDays) + 1);
+          })(),
           totalIncome,
           investmentPercentage: 0
         });
@@ -220,7 +233,12 @@ export const InvestmentAnalysisWidget: React.FC<InvestmentAnalysisWidgetProps> =
       const totalInvested = convertedInvestments.reduce((sum, t) => sum + t.convertedAmount, 0);
       
       // Calculate period days (inclusive of both start and end dates)
-      const periodDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+      // Normalize dates to midnight to avoid time component issues
+      const startMidnight = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      const endMidnight = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      const diffMs = endMidnight.getTime() - startMidnight.getTime();
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+      const periodDays = Math.max(1, Math.floor(diffDays) + 1);
       
       // Calculate average daily
       const averageDaily = totalInvested / periodDays;
@@ -341,8 +359,8 @@ export const InvestmentAnalysisWidget: React.FC<InvestmentAnalysisWidgetProps> =
   // Get transactions for a specific investment type
   const getInvestmentTransactions = async (investment: string) => {
     const { start, end } = getDateRange();
-    const startStr = start.toISOString().split('T')[0];
-    const endStr = end.toISOString().split('T')[0];
+    const startStr = start.toLocaleDateString('en-CA');
+    const endStr = end.toLocaleDateString('en-CA');
     
     const investmentTransactions = transactions.filter(transaction => {
       const transactionDate = transaction.date;
@@ -462,8 +480,72 @@ export const InvestmentAnalysisWidget: React.FC<InvestmentAnalysisWidgetProps> =
     );
   };
 
+  // Get all transactions for PDF export
+  const getAllTransactionsForPDF = async () => {
+    const { start, end } = getDateRange();
+    const startStr = start.toLocaleDateString('en-CA');
+    const endStr = end.toLocaleDateString('en-CA');
+    
+    // Get all investment transactions for the period
+    const allInvestments = transactions.filter(transaction => {
+      const transactionDate = transaction.date;
+      return transaction.type === 'investment' && 
+             transactionDate >= startStr && 
+             transactionDate <= endStr;
+    });
+
+    // Convert all to base currency
+    const convertedInvestments = await Promise.all(
+      allInvestments.map(async (transaction) => {
+        const convertedAmount = await currencyService.convertAmount(
+          transaction.amount,
+          transaction.currency,
+          baseCurrency
+        );
+        return {
+          id: transaction.id,
+          date: transaction.date,
+          description: transaction.description,
+          amount: transaction.amount,
+          currency: transaction.currency,
+          convertedAmount,
+          category: transaction.category
+        };
+      })
+    );
+
+    return convertedInvestments;
+  };
+
+  const handlePrint = async () => {
+    try {
+      const originalCursor = document.body.style.cursor;
+      document.body.style.cursor = 'wait';
+
+      const { start, end } = getDateRange();
+      const allTransactions = await getAllTransactionsForPDF();
+
+      const pdfData = {
+        stats: investmentStats,
+        investments: investmentData,
+        transactions: allTransactions,
+        baseCurrency,
+        period: selectedPeriod,
+        dateRange: { start, end }
+      };
+
+      await exportInvestmentToPDF(pdfData);
+
+      document.body.style.cursor = originalCursor;
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      document.body.style.cursor = '';
+      alert('Failed to generate PDF. Please try again.');
+    }
+  };
+
   return (
-    <Card className="p-6 bg-gradient-to-br from-surface to-background border-border-light">
+    <Card id="investment-analysis-widget" className="p-6 bg-gradient-to-br from-surface to-background border-border-light">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-warning/10 rounded-lg border border-warning/20">
@@ -492,9 +574,20 @@ export const InvestmentAnalysisWidget: React.FC<InvestmentAnalysisWidgetProps> =
             <option value="last-month">Last Month</option>
             <option value="this-year">This Year</option>
             <option value="last-year">Last Year</option>
+            <option value="all-time">All Time</option>
             <option value="custom">Custom Range</option>
           </select>
           
+          {/* Print Button */}
+          <button
+            onClick={handlePrint}
+            className="bg-blue-600 hover:bg-blue-700 border border-blue-500 rounded-lg px-3 py-2 text-white text-sm transition-colors flex items-center gap-2"
+            title="Export to PDF"
+          >
+            <Printer className="w-4 h-4" />
+            Print
+          </button>
+
           {/* Expand/Collapse Button */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
